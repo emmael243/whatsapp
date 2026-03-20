@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body { background:#0d0d0d; color:white; text-align:center; font-family:sans-serif;}
+video { width:45%; border-radius:12px; }
+#chat { height:150px; overflow:auto; background:#1a1a1a; margin:10px; padding:10px;}
+#status { font-weight:bold; margin:10px; }
+</style>
+</head>
+<body>
+
+<h2>🔥 WebRTC PRO+</h2>
+<div id="status">🟡 Conectando...</div>
+
+<video id="localVideo" autoplay muted></video>
+<video id="remoteVideo" autoplay></video>
+
+<br>
+<button onclick="start()">🎥 Iniciar</button>
+
+<hr>
+
+<div id="chat"></div>
+<input id="msg" placeholder="Mensaje">
+<button onclick="send()">Enviar</button>
+
+<hr>
+<input type="file" id="fileInput">
+
+<script>
+
+let room = prompt("ID sala:");
+let ws = new WebSocket("wss://ws.ifelse.io");
+
+let pc;
+let dc;
+
+function createPeer(){
+  pc = new RTCPeerConnection({
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      {
+        urls: [
+          'turn:global.relay.metered.ca:80',
+          'turn:global.relay.metered.ca:443?transport=tcp'
+        ],
+        username: '6add749aa39bded58851f0d5',
+        credential: 'TF2Z0iD5X45aIWpX'
+      }
+    ]
+  });
+
+  pc.onconnectionstatechange = () => {
+    let s = pc.connectionState;
+
+    if(s === "connected") setStatus("🟢 Excelente");
+    else if(s === "connecting") setStatus("🟡 Conectando...");
+    else setStatus("🔴 Problema - reconectando...");
+    
+    if(s === "disconnected" || s === "failed"){
+      reconnect();
+    }
+  };
+
+  pc.onicecandidate = e => {
+    if(e.candidate){
+      ws.send(JSON.stringify({candidate: e.candidate}));
+    }
+  };
+
+  pc.ontrack = e => {
+    document.getElementById("remoteVideo").srcObject = e.streams[0];
+  };
+
+  pc.ondatachannel = e => {
+    dc = e.channel;
+    setupDataChannel();
+  };
+}
+
+function setupDataChannel(){
+  dc.onmessage = e => {
+    if(typeof e.data === "string"){
+      addMsg("👤 " + e.data);
+    } else {
+      receiveFile(e.data);
+    }
+  };
+}
+
+function setStatus(text){
+  document.getElementById("status").innerText = text;
+}
+
+function addMsg(m){
+  document.getElementById("chat").innerHTML += "<div>"+m+"</div>";
+}
+
+async function start(){
+  createPeer();
+
+  let stream = await navigator.mediaDevices.getUserMedia({
+    video: { width:640, height:480, frameRate:15 },
+    audio: true
+  });
+
+  document.getElementById("localVideo").srcObject = stream;
+
+  stream.getTracks().forEach(t => pc.addTrack(t, stream));
+
+  dc = pc.createDataChannel("chat");
+  setupDataChannel();
+
+  let offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+
+  ws.send(JSON.stringify({sdp: pc.localDescription}));
+}
+
+ws.onmessage = async (msg) => {
+  let data = JSON.parse(msg.data);
+
+  if(data.sdp){
+    await pc.setRemoteDescription(data.sdp);
+
+    if(data.sdp.type === "offer"){
+      let answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      ws.send(JSON.stringify({sdp: pc.localDescription}));
+    }
+  }
+
+  if(data.candidate){
+    await pc.addIceCandidate(data.candidate);
+  }
+};
+
+function send(){
+  let m = document.getElementById("msg").value;
+  dc.send(m);
+  addMsg("🟢 " + m);
+}
+
+////// 📁 ENVÍO DE ARCHIVOS EN CHUNKS //////
+
+let fileBuffer = [];
+
+document.getElementById("fileInput").onchange = function(){
+  let file = this.files[0];
+  let chunkSize = 16000;
+  let offset = 0;
+
+  let reader = new FileReader();
+
+  reader.onload = e => {
+    dc.send(e.target.result);
+    offset += e.target.result.byteLength;
+
+    if(offset < file.size){
+      readSlice(offset);
+    }
+  };
+
+  function readSlice(o){
+    let slice = file.slice(o, o + chunkSize);
+    reader.readAsArrayBuffer(slice);
+  }
+
+  readSlice(0);
+};
+
+function receiveFile(data){
+  fileBuffer.push(data);
+
+  // aquí podrías reconstruir archivo completo
+}
+
+////// 🔄 RECONEXIÓN //////
+
+function reconnect(){
+  setTimeout(() => {
+    start();
+  }, 3000);
+}
+
+////// 📉 ADAPTAR BITRATE //////
+
+setInterval(async () => {
+  if(!pc) return;
+
+  let stats = await pc.getStats();
+
+  stats.forEach(report => {
+    if(report.type === "outbound-rtp" && report.kind === "video"){
+      let bitrate = report.bytesSent;
+
+      let sender = pc.getSenders().find(s => s.track.kind === "video");
+
+      if(sender){
+        let params = sender.getParameters();
+
+        if(bitrate > 500000){
+          params.encodings = [{ maxBitrate: 300000 }];
+        } else {
+          params.encodings = [{ maxBitrate: 800000 }];
+        }
+
+        sender.setParameters(params);
+      }
+    }
+  });
+}, 3000);
+
+</script>
+
+</body>
+</html>
