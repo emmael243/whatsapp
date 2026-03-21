@@ -182,6 +182,12 @@
             overflow-y: auto;
             font-family: monospace;
         }
+        button.small {
+            background: #3b82f6;
+            padding: 5px 12px;
+            font-size: 0.7rem;
+            margin-top: 8px;
+        }
         @media (max-width: 760px) {
             .header { flex-direction: column; align-items: stretch; }
         }
@@ -221,6 +227,7 @@
                 <button id="hangupBtn" class="action-btn" style="background:#dc2626;" disabled>📴 Colgar</button>
                 <button id="toggleMicBtn" class="action-btn warning" style="background:#475569;">🎤 Micrófono ON</button>
                 <button id="toggleCamBtn" class="action-btn warning" style="background:#475569;">📷 Cámara ON</button>
+                <button id="playRemoteBtn" class="action-btn small" style="background:#3b82f6; display: none;">🔊 Reproducir remoto</button>
             </div>
             <div id="callStatusMsg" style="text-align:center; margin-top:12px; font-size:0.8rem; color:#cbd5e1;"></div>
             <div class="debug-panel" id="debugLog"></div>
@@ -301,6 +308,7 @@
     const incomingDiv = document.getElementById('incomingNotification');
     const callStatusSpan = document.getElementById('callStatusMsg');
     const debugLog = document.getElementById('debugLog');
+    const playRemoteBtn = document.getElementById('playRemoteBtn');
 
     function log(msg) {
         const time = new Date().toLocaleTimeString();
@@ -416,24 +424,28 @@
             if (pc.iceConnectionState === 'connected') {
                 callStatusSpan.innerText = `✅ Conectado - Video y audio en curso`;
                 log("🎉 CONEXIÓN ESTABLECIDA - Medios fluyendo");
-            } else if (pc.iceConnectionState === 'completed') {
-                log("✨ ICE completed - Todo funcionando");
+                // Forzar reproducción del video remoto cuando la conexión esté lista
+                remoteVideo.play().catch(e => log(`⚠️ Autoplay post-conexión: ${e.message}`));
+                playRemoteBtn.style.display = 'inline-block';
             } else if (pc.iceConnectionState === 'failed') {
                 log("❌ ICE falló - Verifica TURN");
                 endCall();
+            } else if (pc.iceConnectionState === 'checking') {
+                log("🕐 Comprobando candidatos ICE...");
             }
         };
         
         pc.ontrack = (event) => {
             log(`📺 Track recibido: ${event.track.kind}`);
-            if (event.streams && event.streams[0]) {
-                remoteVideo.srcObject = event.streams[0];
-            } else {
-                if (!remoteVideo.srcObject) {
-                    remoteVideo.srcObject = new MediaStream();
-                }
-                remoteVideo.srcObject.addTrack(event.track);
+            // Asegurarse de que siempre tengamos un único stream remoto
+            if (!remoteVideo.srcObject) {
+                remoteVideo.srcObject = new MediaStream();
+                log("🆕 Nuevo MediaStream creado para remoto");
             }
+            remoteVideo.srcObject.addTrack(event.track);
+            log(`➕ Track añadido al stream. Total tracks: ${remoteVideo.srcObject.getTracks().length}`);
+            // Intento de reproducción automática (puede ser bloqueado)
+            remoteVideo.play().catch(e => log(`⚠️ Autoplay en ontrack bloqueado: ${e.message}`));
         };
         
         pc.onconnectionstatechange = () => {
@@ -626,6 +638,7 @@
             remoteDescSet = false;
             candidateQueue = [];
             isCaller = false;
+            playRemoteBtn.style.display = 'none';
             log("🔴 Llamada finalizada");
         }
     }
@@ -677,6 +690,17 @@
     hangupBtn.addEventListener('click', () => {
         endCall();
         callStatusSpan.innerText = "Llamada finalizada";
+    });
+
+    // Botón manual para reproducir el video remoto
+    playRemoteBtn.addEventListener('click', () => {
+        if (remoteVideo.srcObject) {
+            remoteVideo.play()
+                .then(() => log("▶️ Reproducción manual iniciada"))
+                .catch(e => log(`❌ Error al reproducir manual: ${e.message}`));
+        } else {
+            log("⚠️ No hay stream remoto para reproducir");
+        }
     });
 
     setPhoneBtn.addEventListener('click', async () => {
