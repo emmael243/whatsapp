@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>MyOW - WebRTC con TURN Funcional</title>
+    <title>MyOW - WebRTC Simple</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -24,13 +24,7 @@
             justify-content: space-between;
             gap: 16px;
         }
-        .logo h1 {
-            font-size: 1.7rem;
-            background: linear-gradient(135deg, #60a5fa, #a855f7);
-            background-clip: text;
-            -webkit-background-clip: text;
-            color: transparent;
-        }
+        .logo h1 { font-size: 1.7rem; background: linear-gradient(135deg, #60a5fa, #a855f7); background-clip: text; -webkit-background-clip: text; color: transparent; }
         .user-area {
             display: flex;
             gap: 12px;
@@ -65,11 +59,7 @@
             border-radius: 40px;
             font-size: 0.85rem;
         }
-        .dashboard {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 24px;
-        }
+        .dashboard { display: flex; flex-wrap: wrap; gap: 24px; }
         .devices-panel {
             flex: 1.2;
             min-width: 260px;
@@ -91,11 +81,7 @@
             border-left: 4px solid #3b82f6;
             padding-left: 12px;
         }
-        .device-list {
-            list-style: none;
-            max-height: 500px;
-            overflow-y: auto;
-        }
+        .device-list { list-style: none; max-height: 500px; overflow-y: auto; }
         .device-item {
             background: #1e293b;
             margin: 12px 0;
@@ -115,13 +101,7 @@
             cursor: pointer;
             color: white;
         }
-        .call-btn:hover { background: #059669; }
-        .video-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            margin-top: 15px;
-        }
+        .video-container { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 15px; }
         .video-box {
             background: #00000066;
             border-radius: 24px;
@@ -138,11 +118,7 @@
             max-height: 280px;
             object-fit: cover;
         }
-        .video-label {
-            background: rgba(0,0,0,0.7);
-            padding: 5px;
-            font-size: 0.8rem;
-        }
+        .video-label { background: rgba(0,0,0,0.7); padding: 5px; font-size: 0.8rem; }
         .call-controls {
             margin-top: 20px;
             display: flex;
@@ -178,7 +154,7 @@
             padding: 8px;
             border-radius: 12px;
             font-size: 0.7rem;
-            max-height: 120px;
+            max-height: 150px;
             overflow-y: auto;
             font-family: monospace;
         }
@@ -188,15 +164,13 @@
             font-size: 0.7rem;
             margin-top: 8px;
         }
-        @media (max-width: 760px) {
-            .header { flex-direction: column; align-items: stretch; }
-        }
+        @media (max-width: 760px) { .header { flex-direction: column; align-items: stretch; } }
     </style>
 </head>
 <body>
 <div class="container">
     <div class="header">
-        <div class="logo"><h1>📞 MyOW Call + TURN Pro</h1></div>
+        <div class="logo"><h1>📞 MyOW Call (STUN + TURN)</h1></div>
         <div class="user-area">
             <input type="tel" id="phoneInput" placeholder="+34 600 000 000" autocomplete="off">
             <button id="setPhoneBtn">✅ Registrar número</button>
@@ -248,7 +222,7 @@
     import { initializeApp } from "firebase/app";
     import { getDatabase, ref, set, onValue, push, remove, onDisconnect, update } from "firebase/database";
 
-    // ---------- CONFIGURACIÓN FIREBASE ----------
+    // ==================== FIREBASE ====================
     const firebaseConfig = {
         apiKey: "AIzaSyD29ExpZwaXQGV059fQGZ-3i0GMzk353o0",
         authDomain: "myow-cdb46.firebaseapp.com",
@@ -262,7 +236,17 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // ========== 🔧 CONFIGURACIÓN DE TURN (ACTUALIZADA CON TUS CREDENCIALES) ==========
+    // ==================== ICE SERVERS ====================
+    // Primero solo STUN para probar (si ambos están en la misma red WiFi debería funcionar)
+    // Si quieres TURN, descomenta la sección TURN y comenta la de solo STUN.
+    
+    // Opción 1: Solo STUN (prueba en red local)
+    // const iceServers = [
+    //     { urls: "stun:stun.l.google.com:19302" },
+    //     { urls: "stun:stun1.l.google.com:19302" }
+    // ];
+
+    // Opción 2: STUN + TURN (con tus credenciales)
     const turnConfig = {
         urls: [
             "turn:global.turn.metered.live:3478?transport=udp",
@@ -272,16 +256,13 @@
         username: "6add749aa39bded58851f0d5",
         credential: "TF2Z0iD5X45aIWpX"
     };
-
     const iceServers = [
         { urls: "stun:stun.l.google.com:19302" },
         { urls: "stun:stun1.l.google.com:19302" },
-        { urls: "stun:stun2.l.google.com:19302" },
         turnConfig
     ];
-    // =========================================================================
 
-    // Variables globales
+    // ==================== VARIABLES GLOBALES ====================
     let myClientId = null;
     let myPhoneNumber = "";
     let peerConnection = null;
@@ -415,7 +396,7 @@
                 const path = isCaller ? 'callerCandidates' : 'calleeCandidates';
                 const candRef = ref(db, `calls/${activeCallId}/${path}/${Date.now()}_${Math.random()}`);
                 set(candRef, candidate);
-                log(`📡 ICE candidate enviado: ${candidate.candidate.slice(0, 60)}...`);
+                log(`📡 ICE candidate enviado (${candidate.type}): ${candidate.candidate.slice(0, 50)}...`);
             }
         };
         
@@ -424,27 +405,27 @@
             if (pc.iceConnectionState === 'connected') {
                 callStatusSpan.innerText = `✅ Conectado - Video y audio en curso`;
                 log("🎉 CONEXIÓN ESTABLECIDA - Medios fluyendo");
-                // Forzar reproducción del video remoto cuando la conexión esté lista
-                remoteVideo.play().catch(e => log(`⚠️ Autoplay post-conexión: ${e.message}`));
                 playRemoteBtn.style.display = 'inline-block';
+                // Intento automático de reproducción
+                remoteVideo.play().catch(e => log(`⚠️ Autoplay automático falló: ${e.message}`));
             } else if (pc.iceConnectionState === 'failed') {
-                log("❌ ICE falló - Verifica TURN");
+                log("❌ ICE falló - Verifica TURN o conectividad de red");
                 endCall();
-            } else if (pc.iceConnectionState === 'checking') {
-                log("🕐 Comprobando candidatos ICE...");
+            } else if (pc.iceConnectionState === 'disconnected') {
+                log("⚠️ ICE desconectado, posible pérdida de red");
             }
         };
         
         pc.ontrack = (event) => {
             log(`📺 Track recibido: ${event.track.kind}`);
-            // Asegurarse de que siempre tengamos un único stream remoto
+            // Siempre usar un único stream remoto
             if (!remoteVideo.srcObject) {
                 remoteVideo.srcObject = new MediaStream();
                 log("🆕 Nuevo MediaStream creado para remoto");
             }
             remoteVideo.srcObject.addTrack(event.track);
-            log(`➕ Track añadido al stream. Total tracks: ${remoteVideo.srcObject.getTracks().length}`);
-            // Intento de reproducción automática (puede ser bloqueado)
+            log(`➕ Tracks en stream remoto: ${remoteVideo.srcObject.getTracks().length}`);
+            // Forzar reproducción cada vez que llega un track
             remoteVideo.play().catch(e => log(`⚠️ Autoplay en ontrack bloqueado: ${e.message}`));
         };
         
@@ -453,6 +434,11 @@
             if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
                 endCall();
             }
+        };
+        
+        // Para depurar candidatos locales
+        pc.onicegatheringstatechange = () => {
+            log(`🔄 ICE gathering state: ${pc.iceGatheringState}`);
         };
         
         return pc;
@@ -495,7 +481,7 @@
                     while (candidateQueue.length) {
                         await peerConnection.addIceCandidate(candidateQueue.shift());
                     }
-                    log("✅ Respuesta recibida");
+                    log("✅ Respuesta recibida y aplicada");
                     callStatusSpan.innerText = `🔊 En llamada con ${calleePhone}`;
                 }
             });
@@ -692,7 +678,6 @@
         callStatusSpan.innerText = "Llamada finalizada";
     });
 
-    // Botón manual para reproducir el video remoto
     playRemoteBtn.addEventListener('click', () => {
         if (remoteVideo.srcObject) {
             remoteVideo.play()
