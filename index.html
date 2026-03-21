@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>MyOW - WebRTC con TURN</title>
+    <title>MyOW - WebRTC con TURN Funcional</title>
     <style>
-        /* Mantén tu CSS original o usa este simplificado */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -116,6 +115,7 @@
             cursor: pointer;
             color: white;
         }
+        .call-btn:hover { background: #059669; }
         .video-container {
             display: flex;
             flex-wrap: wrap;
@@ -137,6 +137,11 @@
             transform: scaleX(-1);
             max-height: 280px;
             object-fit: cover;
+        }
+        .video-label {
+            background: rgba(0,0,0,0.7);
+            padding: 5px;
+            font-size: 0.8rem;
         }
         .call-controls {
             margin-top: 20px;
@@ -167,6 +172,16 @@
             margin-bottom: 12px;
         }
         .hidden { display: none; }
+        .debug-panel {
+            margin-top: 12px;
+            background: #1e1e2f;
+            padding: 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            max-height: 120px;
+            overflow-y: auto;
+            font-family: monospace;
+        }
         @media (max-width: 760px) {
             .header { flex-direction: column; align-items: stretch; }
         }
@@ -175,7 +190,7 @@
 <body>
 <div class="container">
     <div class="header">
-        <div class="logo"><h1>📞 MyOW Call + TURN</h1></div>
+        <div class="logo"><h1>📞 MyOW Call + TURN Pro</h1></div>
         <div class="user-area">
             <input type="tel" id="phoneInput" placeholder="+34 600 000 000" autocomplete="off">
             <button id="setPhoneBtn">✅ Registrar número</button>
@@ -208,7 +223,7 @@
                 <button id="toggleCamBtn" class="action-btn warning" style="background:#475569;">📷 Cámara ON</button>
             </div>
             <div id="callStatusMsg" style="text-align:center; margin-top:12px; font-size:0.8rem; color:#cbd5e1;"></div>
-            <div id="debugLog" style="margin-top: 12px; background:#1e1e2f; padding: 8px; border-radius: 12px; font-size: 0.7rem; max-height: 100px; overflow-y: auto; font-family: monospace;"></div>
+            <div class="debug-panel" id="debugLog"></div>
         </div>
     </div>
 </div>
@@ -224,7 +239,7 @@
 
 <script type="module">
     import { initializeApp } from "firebase/app";
-    import { getDatabase, ref, set, onValue, push, remove, onDisconnect, update, get } from "firebase/database";
+    import { getDatabase, ref, set, onValue, push, remove, onDisconnect, update } from "firebase/database";
 
     // ---------- CONFIGURACIÓN FIREBASE ----------
     const firebaseConfig = {
@@ -240,24 +255,24 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // ========== 🔧 CONFIGURACIÓN DE TURN (¡REEMPLAZA CON TUS DATOS REALES!) ==========
-    // Obtén credenciales gratuitas en https://www.metered.ca (50GB/mes gratis)
+    // ========== 🔧 CONFIGURACIÓN DE TURN (ACTUALIZADA CON TUS CREDENCIALES) ==========
     const turnConfig = {
         urls: [
             "turn:global.turn.metered.live:3478?transport=udp",
-            "turn:global.turn.metered.live:3478?transport=tcp"
+            "turn:global.turn.metered.live:3478?transport=tcp",
+            "turn:global.turn.metered.live:443?transport=tcp"
         ],
-        username: "TU_USERNAME",      // Cámbialo por tu username de Metered
-        credential: "TU_CREDENTIAL"   // Cámbialo por tu password
+        username: "6add749aa39bded58851f0d5",
+        credential: "TF2Z0iD5X45aIWpX"
     };
-    // Si no tienes TURN, usa solo STUN pero puede fallar en redes móviles.
-    // =========================================================================
 
     const iceServers = [
         { urls: "stun:stun.l.google.com:19302" },
         { urls: "stun:stun1.l.google.com:19302" },
+        { urls: "stun:stun2.l.google.com:19302" },
         turnConfig
     ];
+    // =========================================================================
 
     // Variables globales
     let myClientId = null;
@@ -265,12 +280,9 @@
     let peerConnection = null;
     let localStream = null;
     let activeCallId = null;
-    let currentCallPeerId = null;
     let isCaller = false;
     let candidateQueue = [];
     let remoteDescSet = false;
-
-    // Listeners
     let answerListenerRef = null;
     let callerCandidateListenerRef = null;
     let calleeCandidateListenerRef = null;
@@ -297,8 +309,6 @@
         console.log(msg);
     }
 
-    let micEnabled = true, camEnabled = true;
-
     function generateUUID() {
         return 'id-' + Date.now() + '-' + Math.random().toString(36).substr(2, 8);
     }
@@ -314,7 +324,7 @@
         });
         onDisconnect(presenceRef).remove();
         connectionStatusSpan.innerHTML = `✅ Conectado como ${myPhoneNumber}`;
-        log(`Presencia actualizada: ${myPhoneNumber}`);
+        log(`✅ Presencia actualizada: ${myPhoneNumber}`);
     }
 
     function listenDevices() {
@@ -375,11 +385,11 @@
             const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
             localStream = stream;
             localVideo.srcObject = stream;
+            log("✅ Stream local obtenido");
             updateMediaButtons();
-            log("Stream local obtenido");
             return stream;
         } catch (err) {
-            log(`Error obteniendo medios: ${err.message}`);
+            log(`❌ Error obteniendo medios: ${err.message}`);
             alert("No se pudo acceder a cámara/micrófono. Verifica permisos.");
             throw err;
         }
@@ -390,26 +400,32 @@
             peerConnection.close();
         }
         const pc = new RTCPeerConnection({ iceServers });
+        
         pc.onicecandidate = (event) => {
             if (event.candidate && activeCallId) {
                 const candidate = event.candidate;
                 const path = isCaller ? 'callerCandidates' : 'calleeCandidates';
                 const candRef = ref(db, `calls/${activeCallId}/${path}/${Date.now()}_${Math.random()}`);
                 set(candRef, candidate);
-                log(`ICE candidate enviado: ${candidate.candidate.slice(0, 50)}...`);
+                log(`📡 ICE candidate enviado: ${candidate.candidate.slice(0, 60)}...`);
             }
         };
+        
         pc.oniceconnectionstatechange = () => {
-            log(`ICE connection state: ${pc.iceConnectionState}`);
+            log(`🔄 ICE connection state: ${pc.iceConnectionState}`);
             if (pc.iceConnectionState === 'connected') {
-                callStatusSpan.innerText = `✅ Conectado - medios fluyendo`;
+                callStatusSpan.innerText = `✅ Conectado - Video y audio en curso`;
+                log("🎉 CONEXIÓN ESTABLECIDA - Medios fluyendo");
+            } else if (pc.iceConnectionState === 'completed') {
+                log("✨ ICE completed - Todo funcionando");
             } else if (pc.iceConnectionState === 'failed') {
-                log("ICE falló - posiblemente falta TURN");
+                log("❌ ICE falló - Verifica TURN");
                 endCall();
             }
         };
+        
         pc.ontrack = (event) => {
-            log(`Track recibido: ${event.track.kind}`);
+            log(`📺 Track recibido: ${event.track.kind}`);
             if (event.streams && event.streams[0]) {
                 remoteVideo.srcObject = event.streams[0];
             } else {
@@ -419,12 +435,14 @@
                 remoteVideo.srcObject.addTrack(event.track);
             }
         };
+        
         pc.onconnectionstatechange = () => {
-            log(`Connection state: ${pc.connectionState}`);
+            log(`🔌 Connection state: ${pc.connectionState}`);
             if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
                 endCall();
             }
         };
+        
         return pc;
     }
 
@@ -433,12 +451,14 @@
             const stream = await getLocalStream();
             const pc = createPeerConnection();
             stream.getTracks().forEach(track => pc.addTrack(track, stream));
+            
             const offer = await pc.createOffer();
             await pc.setLocalDescription(offer);
+            
             const callId = push(ref(db, 'calls')).key;
             activeCallId = callId;
-            currentCallPeerId = calleeId;
             isCaller = true;
+            
             const callRef = ref(db, `calls/${callId}`);
             await set(callRef, {
                 callerId: myClientId,
@@ -449,10 +469,11 @@
                 status: "calling",
                 createdAt: Date.now()
             });
+            
             peerConnection = pc;
             callStatusSpan.innerText = `📞 Llamando a ${calleePhone}...`;
             hangupBtn.disabled = false;
-            log(`Oferta enviada, callId=${callId}`);
+            log(`📞 Oferta enviada, callId=${callId}`);
 
             answerListenerRef = onValue(ref(db, `calls/${callId}/answer`), async (snap) => {
                 const answer = snap.val();
@@ -462,7 +483,7 @@
                     while (candidateQueue.length) {
                         await peerConnection.addIceCandidate(candidateQueue.shift());
                     }
-                    log("Respuesta recibida y aplicada");
+                    log("✅ Respuesta recibida");
                     callStatusSpan.innerText = `🔊 En llamada con ${calleePhone}`;
                 }
             });
@@ -477,7 +498,7 @@
                             } else {
                                 candidateQueue.push(cand);
                             }
-                        } catch(e) { log(`Error ICE: ${e.message}`); }
+                        } catch(e) { log(`⚠️ Error ICE: ${e.message}`); }
                     });
                 }
             });
@@ -486,8 +507,8 @@
                 if (!snap.exists() && activeCallId === callId) endCall();
             });
         } catch (err) {
-            log(`Error initiateCall: ${err.message}`);
-            alert("No se pudo iniciar la llamada: " + err.message);
+            log(`❌ Error initiateCall: ${err.message}`);
+            alert("Error al iniciar llamada: " + err.message);
             resetCallUI();
         }
     }
@@ -507,16 +528,14 @@
         });
     }
 
-    let currentIncomingCallId = null;
     function showIncomingCall(callId, callData) {
         if (activeCallId) return;
-        currentIncomingCallId = callId;
         incomingDiv.classList.remove('hidden');
         incomingDiv.innerHTML = `
             <div class="incoming-card">
                 <span>📞 Llamada entrante de ${callData.callerPhone || "desconocido"}</span>
-                <button id="acceptCallBtn" style="background:#22c55e;">Aceptar</button>
-                <button id="rejectCallBtn" style="background:#ef4444;">Rechazar</button>
+                <button id="acceptCallBtn" style="background:#22c55e; border:none; padding:6px 20px; border-radius:40px;">Aceptar</button>
+                <button id="rejectCallBtn" style="background:#ef4444; border:none; padding:6px 18px; border-radius:40px;">Rechazar</button>
             </div>
         `;
         document.getElementById('acceptCallBtn')?.addEventListener('click', async () => {
@@ -535,25 +554,28 @@
             const stream = await getLocalStream();
             const pc = createPeerConnection();
             stream.getTracks().forEach(track => pc.addTrack(track, stream));
-            // Obtener la oferta de los datos (ya la tenemos en callData)
+            
             const offer = callData.offer;
             if (!offer) throw new Error("Oferta no encontrada");
             await pc.setRemoteDescription(new RTCSessionDescription(offer));
             remoteDescSet = true;
+            
             while (candidateQueue.length) {
                 await pc.addIceCandidate(candidateQueue.shift());
             }
+            
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
+            
             const callRef = ref(db, `calls/${callId}`);
             await update(callRef, { answer: { sdp: answer.sdp, type: answer.type }, status: "accepted" });
+            
             activeCallId = callId;
-            currentCallPeerId = callData.callerId;
             isCaller = false;
             peerConnection = pc;
             hangupBtn.disabled = false;
             callStatusSpan.innerText = `📞 En llamada con ${callData.callerPhone}`;
-            log("Respuesta enviada, llamada aceptada");
+            log("✅ Llamada aceptada, respuesta enviada");
 
             calleeCandidateListenerRef = onValue(ref(db, `calls/${callId}/callerCandidates`), (snap) => {
                 const candidates = snap.val();
@@ -572,7 +594,7 @@
                 if (!snap.exists() && activeCallId === callId) endCall();
             });
         } catch (err) {
-            log(`Error acceptCall: ${err.message}`);
+            log(`❌ Error acceptCall: ${err.message}`);
             alert("Error al aceptar llamada: " + err.message);
             resetCallUI();
         }
@@ -604,7 +626,7 @@
             remoteDescSet = false;
             candidateQueue = [];
             isCaller = false;
-            log("Llamada finalizada");
+            log("🔴 Llamada finalizada");
         }
     }
 
@@ -623,12 +645,10 @@
         const audioTracks = localStream.getAudioTracks();
         const videoTracks = localStream.getVideoTracks();
         if (audioTracks.length) {
-            micEnabled = audioTracks[0].enabled;
-            toggleMicBtn.innerHTML = micEnabled ? "🎤 Micrófono ON" : "🎤 Micrófono OFF";
+            toggleMicBtn.innerHTML = audioTracks[0].enabled ? "🎤 Micrófono ON" : "🎤 Micrófono OFF";
         }
         if (videoTracks.length) {
-            camEnabled = videoTracks[0].enabled;
-            toggleCamBtn.innerHTML = camEnabled ? "📷 Cámara ON" : "📷 Cámara OFF";
+            toggleCamBtn.innerHTML = videoTracks[0].enabled ? "📷 Cámara ON" : "📷 Cámara OFF";
         }
     }
 
@@ -637,8 +657,8 @@
             const audioTracks = localStream.getAudioTracks();
             if (audioTracks.length) {
                 audioTracks[0].enabled = !audioTracks[0].enabled;
-                micEnabled = audioTracks[0].enabled;
-                toggleMicBtn.innerHTML = micEnabled ? "🎤 Micrófono ON" : "🎤 Micrófono OFF";
+                toggleMicBtn.innerHTML = audioTracks[0].enabled ? "🎤 Micrófono ON" : "🎤 Micrófono OFF";
+                log(`Micrófono ${audioTracks[0].enabled ? 'activado' : 'silenciado'}`);
             }
         }
     });
@@ -648,8 +668,8 @@
             const videoTracks = localStream.getVideoTracks();
             if (videoTracks.length) {
                 videoTracks[0].enabled = !videoTracks[0].enabled;
-                camEnabled = videoTracks[0].enabled;
-                toggleCamBtn.innerHTML = camEnabled ? "📷 Cámara ON" : "📷 Cámara OFF";
+                toggleCamBtn.innerHTML = videoTracks[0].enabled ? "📷 Cámara ON" : "📷 Cámara OFF";
+                log(`Cámara ${videoTracks[0].enabled ? 'activada' : 'apagada'}`);
             }
         }
     });
@@ -673,17 +693,21 @@
         await updatePresence();
         listenIncomingCalls();
         listenDevices();
+        log(`🎉 Registrado con número: ${myPhoneNumber}`);
     });
 
     // Inicialización
     const storedId = sessionStorage.getItem("myow_client_id");
     if (storedId) {
         myClientId = storedId;
+        log(`Cliente ID recuperado: ${myClientId}`);
     } else {
         myClientId = generateUUID();
         sessionStorage.setItem("myow_client_id", myClientId);
+        log(`Nuevo cliente ID: ${myClientId}`);
     }
     connectionStatusSpan.innerHTML = "⚡ Esperando número...";
+    log("🚀 App inicializada, esperando registro");
 
     window.addEventListener('beforeunload', () => {
         if (myClientId) remove(ref(db, `presence/${myClientId}`));
