@@ -2,37 +2,31 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>WebRTC Básico - Oferta/Respuesta</title>
+<title>WebRTC con Números y Firebase</title>
 <style>
 body { font-family: sans-serif; background:#111; color:#eee; padding:20px; }
-video { width: 45%; margin:10px; border-radius:12px; background:#000; }
-textarea { width:100%; height:60px; margin:4px 0; }
-button { padding:8px 16px; margin:4px; }
+video { width:45%; margin:10px; border-radius:12px; background:#000; }
+input, button { padding:8px; margin:4px; }
 </style>
 </head>
 <body>
-<h2>WebRTC Básico - Oferta/Respuesta</h2>
+<h2>WebRTC Simple con Números</h2>
+
+<input type="text" id="myNumber" placeholder="Tu número">
+<button id="registerBtn">✅ Registrar</button>
+<br>
+<input type="text" id="callNumber" placeholder="Número a llamar">
+<button id="callBtn">📞 Llamar</button>
+<br><br>
 
 <video id="localVideo" autoplay muted></video>
 <video id="remoteVideo" autoplay></video>
 
-<div>
-  <button id="startBtn">🎬 Iniciar cámara</button>
-  <button id="callBtn">📞 Crear Oferta</button>
-  <button id="answerBtn">✅ Crear Respuesta</button>
-</div>
-
-<h3>Oferta (JSON)</h3>
-<textarea id="offerArea"></textarea>
-
-<h3>Respuesta (JSON)</h3>
-<textarea id="answerArea"></textarea>
-
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-app.js";
-import { getDatabase, ref, set, onValue, push } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-database.js";
+import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-database.js";
 
-// ---- CONFIG FIREBASE ----
+// ---- FIREBASE ----
 const firebaseConfig = {
   apiKey: "AIzaSyD29ExpZwaXQGV059fQGZ-3i0GMzk353o0",
   authDomain: "myow-cdb46.firebaseapp.com",
@@ -46,51 +40,94 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 // ---- VARIABLES ----
-let localStream;
-let pc;
+let pc, localStream;
+let myNumber = "";
+let remoteNumber = "";
 const iceServers = [{ urls: "stun:stun.l.google.com:19302" }];
+
 const localVideo = document.getElementById("localVideo");
 const remoteVideo = document.getElementById("remoteVideo");
-const offerArea = document.getElementById("offerArea");
-const answerArea = document.getElementById("answerArea");
 
-// ---- FUNCIONES ----
+// ---- FUNCIÓN DE CÁMARA ----
 async function startCamera() {
-    localStream = await navigator.mediaDevices.getUserMedia({video:true, audio:true});
+    localStream = await navigator.mediaDevices.getUserMedia({video:true,audio:true});
     localVideo.srcObject = localStream;
-    console.log("🎥 Cámara iniciada");
 }
 
-function createPeerConnection() {
+// ---- PEER CONNECTION ----
+function createPC() {
     pc = new RTCPeerConnection({ iceServers });
-    localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+    if(localStream) localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
     pc.ontrack = e => { remoteVideo.srcObject = e.streams[0]; console.log("📡 Track remoto recibido"); };
     pc.onicecandidate = e => {
-        if(e.candidate) console.log("🔹 ICE candidate", e.candidate);
+        if(e.candidate && remoteNumber){
+            set(ref(db, `webrtc/${remoteNumber}/candidates/${Date.now()}`), e.candidate);
+        }
     };
 }
 
-// ---- BOTONES ----
-document.getElementById("startBtn").onclick = startCamera;
+// ---- REGISTRAR NÚMERO ----
+document.getElementById("registerBtn").onclick = async () => {
+    myNumber = document.getElementById("myNumber").value.trim();
+    if(!myNumber) return alert("Ingresa tu número");
+    await startCamera();
+    console.log(`✅ Número registrado: ${myNumber}`);
+    listenIncoming();
+};
 
+// ---- LLAMAR ----
 document.getElementById("callBtn").onclick = async () => {
-    createPeerConnection();
+    remoteNumber = document.getElementById("callNumber").value.trim();
+    if(!remoteNumber || !myNumber) return alert("Debes registrar tu número y el número a llamar");
+    createPC();
     const offer = await pc.createOffer();
     await pc.setLocalDescription(offer);
-    offerArea.value = JSON.stringify(offer);
-    console.log("📢 Oferta creada");
+    // Guardar oferta en Firebase bajo el número del receptor
+    set(ref(db, `webrtc/${remoteNumber}/offer`), { from: myNumber, sdp: offer.sdp, type: offer.type });
+    console.log("📢 Oferta enviada");
+    // Escuchar respuesta
+    onValue(ref(db, `webrtc/${myNumber}/answer`), async snap => {
+        const answer = snap.val();
+        if(answer && pc){
+            await pc.setRemoteDescription(answer);
+            console.log("✅ Respuesta recibida y aplicada");
+            remove(ref(db, `webrtc/${myNumber}/answer`));
+        }
+    });
+    // Escuchar candidatos del receptor
+    onValue(ref(db, `webrtc/${myNumber}/candidates`), snap => {
+        const data = snap.val();
+        if(data && pc){
+            Object.values(data).forEach(async c => { await pc.addIceCandidate(c); });
+            remove(ref(db, `webrtc/${myNumber}/candidates`));
+        }
+    });
 };
 
-document.getElementById("answerBtn").onclick = async () => {
-    createPeerConnection();
-    const offer = JSON.parse(offerArea.value);
-    await pc.setRemoteDescription(offer);
-    const answer = await pc.createAnswer();
-    await pc.setLocalDescription(answer);
-    answerArea.value = JSON.stringify(answer);
-    console.log("✅ Respuesta creada");
-    // Aplicar la respuesta manualmente en el otro lado
-};
+// ---- ESCUCHAR LLAMADAS ENTRANTES ----
+function listenIncoming(){
+    onValue(ref(db, `webrtc/${myNumber}/offer`), async snap => {
+        const offer = snap.val();
+        if(!offer || pc) return;
+        remoteNumber = offer.from;
+        createPC();
+        await pc.setRemoteDescription({ sdp: offer.sdp, type: offer.type });
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        // Enviar respuesta al llamante
+        set(ref(db, `webrtc/${remoteNumber}/answer`), { sdp: answer.sdp, type: answer.type });
+        console.log(`📞 Llamada entrante de ${remoteNumber} - respuesta enviada`);
+        remove(ref(db, `webrtc/${myNumber}/offer`));
+        // Escuchar candidatos del llamante
+        onValue(ref(db, `webrtc/${myNumber}/candidates`), snap => {
+            const data = snap.val();
+            if(data && pc){
+                Object.values(data).forEach(async c => { await pc.addIceCandidate(c); });
+                remove(ref(db, `webrtc/${myNumber}/candidates`));
+            }
+        });
+    });
+}
 </script>
 </body>
 </html>
