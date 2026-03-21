@@ -1,728 +1,244 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>MyOW - WebRTC Simple</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #0a0f1c;
-            color: #eef4ff;
-            padding: 20px;
-        }
-        .container { max-width: 1400px; margin: 0 auto; }
-        .header {
-            background: #111827;
-            border-radius: 28px;
-            padding: 18px 24px;
-            margin-bottom: 24px;
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: space-between;
-            gap: 16px;
-        }
-        .logo h1 { font-size: 1.7rem; background: linear-gradient(135deg, #60a5fa, #a855f7); background-clip: text; -webkit-background-clip: text; color: transparent; }
-        .user-area {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            background: #1f2937;
-            padding: 8px 16px;
-            border-radius: 60px;
-        }
-        .user-area input {
-            background: #0f172a;
-            border: 1px solid #334155;
-            color: white;
-            padding: 10px 16px;
-            border-radius: 40px;
-            font-size: 1rem;
-            outline: none;
-            width: 180px;
-        }
-        .user-area button {
-            background: #3b82f6;
-            border: none;
-            padding: 8px 20px;
-            border-radius: 40px;
-            font-weight: bold;
-            cursor: pointer;
-            color: white;
-        }
-        .status-badge {
-            background: #10b98120;
-            border-left: 4px solid #10b981;
-            padding: 8px 14px;
-            border-radius: 40px;
-            font-size: 0.85rem;
-        }
-        .dashboard { display: flex; flex-wrap: wrap; gap: 24px; }
-        .devices-panel {
-            flex: 1.2;
-            min-width: 260px;
-            background: #111827;
-            border-radius: 28px;
-            padding: 20px;
-        }
-        .video-panel {
-            flex: 2;
-            min-width: 320px;
-            background: #111827;
-            border-radius: 28px;
-            padding: 20px;
-        }
-        .panel-title {
-            font-size: 1.3rem;
-            font-weight: 600;
-            margin-bottom: 16px;
-            border-left: 4px solid #3b82f6;
-            padding-left: 12px;
-        }
-        .device-list { list-style: none; max-height: 500px; overflow-y: auto; }
-        .device-item {
-            background: #1e293b;
-            margin: 12px 0;
-            padding: 14px 16px;
-            border-radius: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .device-phone { font-weight: bold; font-size: 1.1rem; }
-        .call-btn {
-            background: #10b981;
-            border: none;
-            padding: 8px 18px;
-            border-radius: 40px;
-            font-weight: bold;
-            cursor: pointer;
-            color: white;
-        }
-        .video-container { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 15px; }
-        .video-box {
-            background: #00000066;
-            border-radius: 24px;
-            overflow: hidden;
-            text-align: center;
-            flex: 1;
-            min-width: 250px;
-        }
-        .video-box video {
-            width: 100%;
-            background: #0a0a0a;
-            border-radius: 20px;
-            transform: scaleX(-1);
-            max-height: 280px;
-            object-fit: cover;
-        }
-        .video-label { background: rgba(0,0,0,0.7); padding: 5px; font-size: 0.8rem; }
-        .call-controls {
-            margin-top: 20px;
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-        .action-btn {
-            background: #ef4444;
-            border: none;
-            padding: 12px 28px;
-            border-radius: 60px;
-            font-weight: bold;
-            font-size: 1rem;
-            color: white;
-            cursor: pointer;
-        }
-        .action-btn.warning { background: #eab308; color: black; }
-        .incoming-card {
-            background: #f97316dd;
-            backdrop-filter: blur(12px);
-            padding: 12px 18px;
-            border-radius: 60px;
-            display: inline-flex;
-            align-items: center;
-            gap: 16px;
-            margin-bottom: 12px;
-        }
-        .hidden { display: none; }
-        .debug-panel {
-            margin-top: 12px;
-            background: #1e1e2f;
-            padding: 8px;
-            border-radius: 12px;
-            font-size: 0.7rem;
-            max-height: 150px;
-            overflow-y: auto;
-            font-family: monospace;
-        }
-        button.small {
-            background: #3b82f6;
-            padding: 5px 12px;
-            font-size: 0.7rem;
-            margin-top: 8px;
-        }
-        @media (max-width: 760px) { .header { flex-direction: column; align-items: stretch; } }
-    </style>
-</head>
-<body>
-<div class="container">
-    <div class="header">
-        <div class="logo"><h1>📞 MyOW Call (STUN + TURN)</h1></div>
-        <div class="user-area">
-            <input type="tel" id="phoneInput" placeholder="+34 600 000 000" autocomplete="off">
-            <button id="setPhoneBtn">✅ Registrar número</button>
-        </div>
-        <div class="status-badge" id="connectionStatus">⚪ Desconectado</div>
-    </div>
-    <div class="dashboard">
-        <div class="devices-panel">
-            <div class="panel-title">📱 Dispositivos activos</div>
-            <ul id="deviceList" class="device-list">
-                <li style="opacity:0.6">🔍 Esperando dispositivos...</li>
-            </ul>
-        </div>
-        <div class="video-panel">
-            <div class="panel-title">🎥 Sala de llamada</div>
-            <div id="incomingNotification" class="hidden"></div>
-            <div class="video-container">
-                <div class="video-box">
-                    <video id="localVideo" autoplay muted playsinline></video>
-                    <div class="video-label">📹 Tú</div>
-                </div>
-                <div class="video-box">
-                    <video id="remoteVideo" autoplay playsinline></video>
-                    <div class="video-label">👤 Remoto</div>
-                </div>
-            </div>
-            <div class="call-controls">
-                <button id="hangupBtn" class="action-btn" style="background:#dc2626;" disabled>📴 Colgar</button>
-                <button id="toggleMicBtn" class="action-btn warning" style="background:#475569;">🎤 Micrófono ON</button>
-                <button id="toggleCamBtn" class="action-btn warning" style="background:#475569;">📷 Cámara ON</button>
-                <button id="playRemoteBtn" class="action-btn small" style="background:#3b82f6; display: none;">🔊 Reproducir remoto</button>
-            </div>
-            <div id="callStatusMsg" style="text-align:center; margin-top:12px; font-size:0.8rem; color:#cbd5e1;"></div>
-            <div class="debug-panel" id="debugLog"></div>
-        </div>
-    </div>
-</div>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MyOW WebRTC DEBUG</title>
 
-<script type="importmap">
-    {
-        "imports": {
-            "firebase/app": "https://www.gstatic.com/firebasejs/10.7.2/firebase-app.js",
-            "firebase/database": "https://www.gstatic.com/firebasejs/10.7.2/firebase-database.js"
-        }
-    }
-</script>
+<style>
+body { font-family: Arial; background:#0f172a; color:white; padding:20px; }
+video { width:300px; background:black; border-radius:10px; }
+button { padding:10px; margin:5px; }
+#debug { background:#111; padding:10px; margin-top:10px; max-height:200px; overflow:auto; font-size:12px;}
+</style>
+</head>
+
+<body>
+
+<h2>📞 WebRTC Debug</h2>
+
+<input id="phone" placeholder="Tu número">
+<button onclick="register()">Registrar</button>
+
+<h3>Usuarios</h3>
+<div id="users"></div>
+
+<h3>Video</h3>
+<video id="localVideo" autoplay muted playsinline></video>
+<video id="remoteVideo" autoplay playsinline></video>
+
+<br>
+<button onclick="hangup()">Colgar</button>
+
+<div id="debug"></div>
 
 <script type="module">
-    import { initializeApp } from "firebase/app";
-    import { getDatabase, ref, set, onValue, push, remove, onDisconnect, update } from "firebase/database";
 
-    // ==================== FIREBASE ====================
-    const firebaseConfig = {
-        apiKey: "AIzaSyD29ExpZwaXQGV059fQGZ-3i0GMzk353o0",
-        authDomain: "myow-cdb46.firebaseapp.com",
-        databaseURL: "https://myow-cdb46-default-rtdb.firebaseio.com",
-        projectId: "myow-cdb46",
-        storageBucket: "myow-cdb46.firebasestorage.app",
-        messagingSenderId: "651159312592",
-        appId: "1:651159312592:web:98404f13e075fdce4d26d5",
-        measurementId: "G-W53ZFMPW7X"
-    };
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-app.js";
+import { getDatabase, ref, set, onValue, push, remove, update } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-database.js";
 
-    // ==================== ICE SERVERS ====================
-    // Primero solo STUN para probar (si ambos están en la misma red WiFi debería funcionar)
-    // Si quieres TURN, descomenta la sección TURN y comenta la de solo STUN.
-    
-    // Opción 1: Solo STUN (prueba en red local)
-    // const iceServers = [
-    //     { urls: "stun:stun.l.google.com:19302" },
-    //     { urls: "stun:stun1.l.google.com:19302" }
-    // ];
+// 🔥 CONFIG
+const firebaseConfig = {
+    databaseURL: "https://myow-cdb46-default-rtdb.firebaseio.com"
+};
 
-    // Opción 2: STUN + TURN (con tus credenciales)
-    const turnConfig = {
-        urls: [
-            "turn:global.turn.metered.live:3478?transport=udp",
-            "turn:global.turn.metered.live:3478?transport=tcp",
-            "turn:global.turn.metered.live:443?transport=tcp"
-        ],
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// 🔥 TURN + STUN
+const iceServers = [
+    { urls: "stun:stun.l.google.com:19302" },
+    {
+        urls: "turn:global.turn.metered.live:3478",
         username: "6add749aa39bded58851f0d5",
         credential: "TF2Z0iD5X45aIWpX"
+    }
+];
+
+// 🔥 VARIABLES
+let pc, localStream, callId, isCaller=false;
+let myId = Math.random().toString(36).substr(2,9);
+let myPhone="";
+
+// DOM
+const localVideo = document.getElementById("localVideo");
+const remoteVideo = document.getElementById("remoteVideo");
+const debug = document.getElementById("debug");
+
+// 🔥 LOG
+function log(msg){
+    console.log(msg);
+    debug.innerHTML += "<div>"+msg+"</div>";
+    debug.scrollTop = debug.scrollHeight;
+}
+
+// 🔥 MEDIA
+async function getMedia(){
+    localStream = await navigator.mediaDevices.getUserMedia({video:true,audio:true});
+    localVideo.srcObject = localStream;
+
+    log("🎥 Tracks locales:");
+    localStream.getTracks().forEach(t=>log("➡️ "+t.kind));
+}
+
+// 🔥 PEER
+function createPC(){
+
+    pc = new RTCPeerConnection({iceServers});
+
+    pc.onicecandidate = e=>{
+        if(e.candidate){
+            const path = isCaller ? "caller" : "callee";
+            set(ref(db,"calls/"+callId+"/"+path+"/"+Date.now()), e.candidate);
+            log("📡 ICE: "+e.candidate.type);
+        }
     };
-    const iceServers = [
-        { urls: "stun:stun.l.google.com:19302" },
-        { urls: "stun:stun1.l.google.com:19302" },
-        turnConfig
-    ];
 
-    // ==================== VARIABLES GLOBALES ====================
-    let myClientId = null;
-    let myPhoneNumber = "";
-    let peerConnection = null;
-    let localStream = null;
-    let activeCallId = null;
-    let isCaller = false;
-    let candidateQueue = [];
-    let remoteDescSet = false;
-    let answerListenerRef = null;
-    let callerCandidateListenerRef = null;
-    let calleeCandidateListenerRef = null;
-    let callNodeListenerRef = null;
+    pc.onconnectionstatechange = ()=>{
+        log("🔌 "+pc.connectionState);
+    };
 
-    // DOM
-    const phoneInput = document.getElementById('phoneInput');
-    const setPhoneBtn = document.getElementById('setPhoneBtn');
-    const deviceListUl = document.getElementById('deviceList');
-    const localVideo = document.getElementById('localVideo');
-    const remoteVideo = document.getElementById('remoteVideo');
-    const hangupBtn = document.getElementById('hangupBtn');
-    const toggleMicBtn = document.getElementById('toggleMicBtn');
-    const toggleCamBtn = document.getElementById('toggleCamBtn');
-    const connectionStatusSpan = document.getElementById('connectionStatus');
-    const incomingDiv = document.getElementById('incomingNotification');
-    const callStatusSpan = document.getElementById('callStatusMsg');
-    const debugLog = document.getElementById('debugLog');
-    const playRemoteBtn = document.getElementById('playRemoteBtn');
+    pc.oniceconnectionstatechange = ()=>{
+        log("🧊 "+pc.iceConnectionState);
+    };
 
-    function log(msg) {
-        const time = new Date().toLocaleTimeString();
-        debugLog.innerHTML += `<div>${time}: ${msg}</div>`;
-        debugLog.scrollTop = debugLog.scrollHeight;
-        console.log(msg);
-    }
+    pc.ontrack = (event)=>{
+        log("📺 TRACK: "+event.track.kind);
 
-    function generateUUID() {
-        return 'id-' + Date.now() + '-' + Math.random().toString(36).substr(2, 8);
-    }
+        if(event.streams[0]){
+            remoteVideo.srcObject = event.streams[0];
 
-    async function updatePresence() {
-        if (!myClientId || !myPhoneNumber) return;
-        const presenceRef = ref(db, `presence/${myClientId}`);
-        await set(presenceRef, {
-            phoneNumber: myPhoneNumber,
-            clientId: myClientId,
-            timestamp: Date.now(),
-            online: true
-        });
-        onDisconnect(presenceRef).remove();
-        connectionStatusSpan.innerHTML = `✅ Conectado como ${myPhoneNumber}`;
-        log(`✅ Presencia actualizada: ${myPhoneNumber}`);
-    }
-
-    function listenDevices() {
-        const presenceRef = ref(db, 'presence');
-        onValue(presenceRef, (snapshot) => {
-            const data = snapshot.val();
-            if (!data) {
-                deviceListUl.innerHTML = '<li>📡 No hay dispositivos conectados</li>';
-                return;
-            }
-            const devices = [];
-            for (let [id, info] of Object.entries(data)) {
-                if (id === myClientId) continue;
-                devices.push({ clientId: id, phoneNumber: info.phoneNumber || "???" });
-            }
-            if (devices.length === 0) {
-                deviceListUl.innerHTML = '<li>👤 No hay otros dispositivos en línea</li>';
-                return;
-            }
-            deviceListUl.innerHTML = "";
-            devices.forEach(dev => {
-                const li = document.createElement('li');
-                li.className = 'device-item';
-                li.innerHTML = `
-                    <div>
-                        <span class="device-phone">📞 ${dev.phoneNumber}</span>
-                        <span style="font-size:0.7rem;">🆔 ${dev.clientId.slice(0,8)}...</span>
-                    </div>
-                    <button class="call-btn" data-clientid="${dev.clientId}" data-phone="${dev.phoneNumber}">🔊 Llamar</button>
-                `;
-                deviceListUl.appendChild(li);
-            });
-            document.querySelectorAll('.call-btn').forEach(btn => {
-                btn.removeEventListener('click', handleCallClick);
-                btn.addEventListener('click', handleCallClick);
-            });
-        });
-    }
-
-    async function handleCallClick(e) {
-        const btn = e.currentTarget;
-        const calleeId = btn.getAttribute('data-clientid');
-        const calleePhone = btn.getAttribute('data-phone');
-        if (!myPhoneNumber) {
-            alert("Primero registra tu número");
-            return;
-        }
-        if (activeCallId) {
-            alert("Ya hay una llamada activa");
-            return;
-        }
-        await initiateCall(calleeId, calleePhone);
-    }
-
-    async function getLocalStream() {
-        if (localStream) return localStream;
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            localStream = stream;
-            localVideo.srcObject = stream;
-            log("✅ Stream local obtenido");
-            updateMediaButtons();
-            return stream;
-        } catch (err) {
-            log(`❌ Error obteniendo medios: ${err.message}`);
-            alert("No se pudo acceder a cámara/micrófono. Verifica permisos.");
-            throw err;
-        }
-    }
-
-    function createPeerConnection() {
-        if (peerConnection) {
-            peerConnection.close();
-        }
-        const pc = new RTCPeerConnection({ iceServers });
-        
-        pc.onicecandidate = (event) => {
-            if (event.candidate && activeCallId) {
-                const candidate = event.candidate;
-                const path = isCaller ? 'callerCandidates' : 'calleeCandidates';
-                const candRef = ref(db, `calls/${activeCallId}/${path}/${Date.now()}_${Math.random()}`);
-                set(candRef, candidate);
-                log(`📡 ICE candidate enviado (${candidate.type}): ${candidate.candidate.slice(0, 50)}...`);
-            }
-        };
-        
-        pc.oniceconnectionstatechange = () => {
-            log(`🔄 ICE connection state: ${pc.iceConnectionState}`);
-            if (pc.iceConnectionState === 'connected') {
-                callStatusSpan.innerText = `✅ Conectado - Video y audio en curso`;
-                log("🎉 CONEXIÓN ESTABLECIDA - Medios fluyendo");
-                playRemoteBtn.style.display = 'inline-block';
-                // Intento automático de reproducción
-                remoteVideo.play().catch(e => log(`⚠️ Autoplay automático falló: ${e.message}`));
-            } else if (pc.iceConnectionState === 'failed') {
-                log("❌ ICE falló - Verifica TURN o conectividad de red");
-                endCall();
-            } else if (pc.iceConnectionState === 'disconnected') {
-                log("⚠️ ICE desconectado, posible pérdida de red");
-            }
-        };
-        
-        pc.ontrack = (event) => {
-            log(`📺 Track recibido: ${event.track.kind}`);
-            // Siempre usar un único stream remoto
-            if (!remoteVideo.srcObject) {
-                remoteVideo.srcObject = new MediaStream();
-                log("🆕 Nuevo MediaStream creado para remoto");
-            }
-            remoteVideo.srcObject.addTrack(event.track);
-            log(`➕ Tracks en stream remoto: ${remoteVideo.srcObject.getTracks().length}`);
-            // Forzar reproducción cada vez que llega un track
-            remoteVideo.play().catch(e => log(`⚠️ Autoplay en ontrack bloqueado: ${e.message}`));
-        };
-        
-        pc.onconnectionstatechange = () => {
-            log(`🔌 Connection state: ${pc.connectionState}`);
-            if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
-                endCall();
-            }
-        };
-        
-        // Para depurar candidatos locales
-        pc.onicegatheringstatechange = () => {
-            log(`🔄 ICE gathering state: ${pc.iceGatheringState}`);
-        };
-        
-        return pc;
-    }
-
-    async function initiateCall(calleeId, calleePhone) {
-        try {
-            const stream = await getLocalStream();
-            const pc = createPeerConnection();
-            stream.getTracks().forEach(track => pc.addTrack(track, stream));
-            
-            const offer = await pc.createOffer();
-            await pc.setLocalDescription(offer);
-            
-            const callId = push(ref(db, 'calls')).key;
-            activeCallId = callId;
-            isCaller = true;
-            
-            const callRef = ref(db, `calls/${callId}`);
-            await set(callRef, {
-                callerId: myClientId,
-                calleeId: calleeId,
-                callerPhone: myPhoneNumber,
-                calleePhone: calleePhone,
-                offer: { sdp: offer.sdp, type: offer.type },
-                status: "calling",
-                createdAt: Date.now()
-            });
-            
-            peerConnection = pc;
-            callStatusSpan.innerText = `📞 Llamando a ${calleePhone}...`;
-            hangupBtn.disabled = false;
-            log(`📞 Oferta enviada, callId=${callId}`);
-
-            answerListenerRef = onValue(ref(db, `calls/${callId}/answer`), async (snap) => {
-                const answer = snap.val();
-                if (answer && peerConnection && peerConnection.remoteDescription === null) {
-                    await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
-                    remoteDescSet = true;
-                    while (candidateQueue.length) {
-                        await peerConnection.addIceCandidate(candidateQueue.shift());
-                    }
-                    log("✅ Respuesta recibida y aplicada");
-                    callStatusSpan.innerText = `🔊 En llamada con ${calleePhone}`;
-                }
-            });
-
-            callerCandidateListenerRef = onValue(ref(db, `calls/${callId}/calleeCandidates`), (snap) => {
-                const candidates = snap.val();
-                if (candidates && peerConnection) {
-                    Object.values(candidates).forEach(async (cand) => {
-                        try {
-                            if (remoteDescSet) {
-                                await peerConnection.addIceCandidate(new RTCIceCandidate(cand));
-                            } else {
-                                candidateQueue.push(cand);
-                            }
-                        } catch(e) { log(`⚠️ Error ICE: ${e.message}`); }
-                    });
-                }
-            });
-
-            callNodeListenerRef = onValue(ref(db, `calls/${callId}`), (snap) => {
-                if (!snap.exists() && activeCallId === callId) endCall();
-            });
-        } catch (err) {
-            log(`❌ Error initiateCall: ${err.message}`);
-            alert("Error al iniciar llamada: " + err.message);
-            resetCallUI();
-        }
-    }
-
-    function listenIncomingCalls() {
-        if (!myClientId) return;
-        const callsRef = ref(db, 'calls');
-        onValue(callsRef, (snapshot) => {
-            const calls = snapshot.val();
-            if (!calls) return;
-            for (let [callId, callData] of Object.entries(calls)) {
-                if (callData.calleeId === myClientId && callData.status === "calling" && !activeCallId) {
-                    showIncomingCall(callId, callData);
-                    break;
-                }
-            }
-        });
-    }
-
-    function showIncomingCall(callId, callData) {
-        if (activeCallId) return;
-        incomingDiv.classList.remove('hidden');
-        incomingDiv.innerHTML = `
-            <div class="incoming-card">
-                <span>📞 Llamada entrante de ${callData.callerPhone || "desconocido"}</span>
-                <button id="acceptCallBtn" style="background:#22c55e; border:none; padding:6px 20px; border-radius:40px;">Aceptar</button>
-                <button id="rejectCallBtn" style="background:#ef4444; border:none; padding:6px 18px; border-radius:40px;">Rechazar</button>
-            </div>
-        `;
-        document.getElementById('acceptCallBtn')?.addEventListener('click', async () => {
-            await acceptCall(callId, callData);
-            incomingDiv.classList.add('hidden');
-        });
-        document.getElementById('rejectCallBtn')?.addEventListener('click', async () => {
-            await rejectCall(callId);
-            incomingDiv.classList.add('hidden');
-        });
-    }
-
-    async function acceptCall(callId, callData) {
-        if (activeCallId) return;
-        try {
-            const stream = await getLocalStream();
-            const pc = createPeerConnection();
-            stream.getTracks().forEach(track => pc.addTrack(track, stream));
-            
-            const offer = callData.offer;
-            if (!offer) throw new Error("Oferta no encontrada");
-            await pc.setRemoteDescription(new RTCSessionDescription(offer));
-            remoteDescSet = true;
-            
-            while (candidateQueue.length) {
-                await pc.addIceCandidate(candidateQueue.shift());
-            }
-            
-            const answer = await pc.createAnswer();
-            await pc.setLocalDescription(answer);
-            
-            const callRef = ref(db, `calls/${callId}`);
-            await update(callRef, { answer: { sdp: answer.sdp, type: answer.type }, status: "accepted" });
-            
-            activeCallId = callId;
-            isCaller = false;
-            peerConnection = pc;
-            hangupBtn.disabled = false;
-            callStatusSpan.innerText = `📞 En llamada con ${callData.callerPhone}`;
-            log("✅ Llamada aceptada, respuesta enviada");
-
-            calleeCandidateListenerRef = onValue(ref(db, `calls/${callId}/callerCandidates`), (snap) => {
-                const candidates = snap.val();
-                if (candidates && peerConnection) {
-                    Object.values(candidates).forEach(async (cand) => {
-                        if (remoteDescSet) {
-                            await peerConnection.addIceCandidate(new RTCIceCandidate(cand));
-                        } else {
-                            candidateQueue.push(cand);
-                        }
-                    });
-                }
-            });
-
-            callNodeListenerRef = onValue(ref(db, `calls/${callId}`), (snap) => {
-                if (!snap.exists() && activeCallId === callId) endCall();
-            });
-        } catch (err) {
-            log(`❌ Error acceptCall: ${err.message}`);
-            alert("Error al aceptar llamada: " + err.message);
-            resetCallUI();
-        }
-    }
-
-    async function rejectCall(callId) {
-        await remove(ref(db, `calls/${callId}`));
-        log("Llamada rechazada");
-    }
-
-    async function endCall() {
-        if (activeCallId) {
-            try {
-                await remove(ref(db, `calls/${activeCallId}`));
-            } catch(e) {}
-            if (peerConnection) {
-                peerConnection.close();
-                peerConnection = null;
-            }
-            if (answerListenerRef) answerListenerRef();
-            if (callerCandidateListenerRef) callerCandidateListenerRef();
-            if (calleeCandidateListenerRef) calleeCandidateListenerRef();
-            if (callNodeListenerRef) callNodeListenerRef();
-            answerListenerRef = callerCandidateListenerRef = calleeCandidateListenerRef = callNodeListenerRef = null;
-            activeCallId = null;
-            remoteVideo.srcObject = null;
-            callStatusSpan.innerText = "";
-            hangupBtn.disabled = true;
-            remoteDescSet = false;
-            candidateQueue = [];
-            isCaller = false;
-            playRemoteBtn.style.display = 'none';
-            log("🔴 Llamada finalizada");
-        }
-    }
-
-    function resetCallUI() {
-        if (activeCallId) endCall();
-        else if (peerConnection) {
-            peerConnection.close();
-            peerConnection = null;
-            remoteVideo.srcObject = null;
-            hangupBtn.disabled = true;
-        }
-    }
-
-    function updateMediaButtons() {
-        if (!localStream) return;
-        const audioTracks = localStream.getAudioTracks();
-        const videoTracks = localStream.getVideoTracks();
-        if (audioTracks.length) {
-            toggleMicBtn.innerHTML = audioTracks[0].enabled ? "🎤 Micrófono ON" : "🎤 Micrófono OFF";
-        }
-        if (videoTracks.length) {
-            toggleCamBtn.innerHTML = videoTracks[0].enabled ? "📷 Cámara ON" : "📷 Cámara OFF";
-        }
-    }
-
-    toggleMicBtn.addEventListener('click', () => {
-        if (localStream) {
-            const audioTracks = localStream.getAudioTracks();
-            if (audioTracks.length) {
-                audioTracks[0].enabled = !audioTracks[0].enabled;
-                toggleMicBtn.innerHTML = audioTracks[0].enabled ? "🎤 Micrófono ON" : "🎤 Micrófono OFF";
-                log(`Micrófono ${audioTracks[0].enabled ? 'activado' : 'silenciado'}`);
-            }
-        }
-    });
-
-    toggleCamBtn.addEventListener('click', () => {
-        if (localStream) {
-            const videoTracks = localStream.getVideoTracks();
-            if (videoTracks.length) {
-                videoTracks[0].enabled = !videoTracks[0].enabled;
-                toggleCamBtn.innerHTML = videoTracks[0].enabled ? "📷 Cámara ON" : "📷 Cámara OFF";
-                log(`Cámara ${videoTracks[0].enabled ? 'activada' : 'apagada'}`);
-            }
-        }
-    });
-
-    hangupBtn.addEventListener('click', () => {
-        endCall();
-        callStatusSpan.innerText = "Llamada finalizada";
-    });
-
-    playRemoteBtn.addEventListener('click', () => {
-        if (remoteVideo.srcObject) {
             remoteVideo.play()
-                .then(() => log("▶️ Reproducción manual iniciada"))
-                .catch(e => log(`❌ Error al reproducir manual: ${e.message}`));
-        } else {
-            log("⚠️ No hay stream remoto para reproducir");
+            .then(()=>log("▶️ PLAY OK"))
+            .catch(e=>log("❌ autoplay "+e.message));
+        }
+    };
+}
+
+// 🔥 REGISTRO
+window.register = async ()=>{
+    myPhone = document.getElementById("phone").value;
+
+    await set(ref(db,"users/"+myId),{
+        phone:myPhone
+    });
+
+    listenUsers();
+    listenCalls();
+};
+
+// 🔥 LIST USERS
+function listenUsers(){
+    onValue(ref(db,"users"),snap=>{
+        let html="";
+        const data = snap.val();
+
+        for(let id in data){
+            if(id===myId) continue;
+
+            html += `<div>
+            ${data[id].phone}
+            <button onclick="call('${id}')">Llamar</button>
+            </div>`;
+        }
+
+        document.getElementById("users").innerHTML = html;
+    });
+}
+
+// 🔥 LLAMAR
+window.call = async (id)=>{
+    isCaller=true;
+
+    await getMedia();
+    createPC();
+
+    localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
+
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+
+    callId = push(ref(db,"calls")).key;
+
+    await set(ref(db,"calls/"+callId),{
+        caller:myId,
+        callee:id,
+        offer
+    });
+
+    log("📤 OFFER");
+
+    onValue(ref(db,"calls/"+callId+"/answer"), async snap=>{
+        const ans = snap.val();
+        if(ans){
+            await pc.setRemoteDescription(ans);
+            log("📥 ANSWER");
         }
     });
 
-    setPhoneBtn.addEventListener('click', async () => {
-        let phone = phoneInput.value.trim();
-        if (!phone) {
-            alert("Ingresa un número");
-            return;
+    onValue(ref(db,"calls/"+callId+"/callee"), snap=>{
+        const data = snap.val();
+        if(data){
+            Object.values(data).forEach(c=>pc.addIceCandidate(c));
         }
-        myPhoneNumber = phone;
-        if (!myClientId) {
-            myClientId = generateUUID();
-            sessionStorage.setItem("myow_client_id", myClientId);
-        }
-        await updatePresence();
-        listenIncomingCalls();
-        listenDevices();
-        log(`🎉 Registrado con número: ${myPhoneNumber}`);
     });
+};
 
-    // Inicialización
-    const storedId = sessionStorage.getItem("myow_client_id");
-    if (storedId) {
-        myClientId = storedId;
-        log(`Cliente ID recuperado: ${myClientId}`);
-    } else {
-        myClientId = generateUUID();
-        sessionStorage.setItem("myow_client_id", myClientId);
-        log(`Nuevo cliente ID: ${myClientId}`);
+// 🔥 RECIBIR
+function listenCalls(){
+    onValue(ref(db,"calls"), async snap=>{
+        const calls = snap.val();
+        if(!calls) return;
+
+        for(let id in calls){
+            const c = calls[id];
+
+            if(c.callee===myId && !callId){
+                callId=id;
+
+                log("📞 ENTRANTE");
+
+                await getMedia();
+                createPC();
+
+                localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
+
+                await pc.setRemoteDescription(c.offer);
+
+                const ans = await pc.createAnswer();
+                await pc.setLocalDescription(ans);
+
+                await update(ref(db,"calls/"+id),{answer:ans});
+
+                log("📤 ANSWER");
+
+                onValue(ref(db,"calls/"+id+"/caller"), snap=>{
+                    const data = snap.val();
+                    if(data){
+                        Object.values(data).forEach(c=>pc.addIceCandidate(c));
+                    }
+                });
+            }
+        }
+    });
+}
+
+// 🔥 COLGAR
+window.hangup = async ()=>{
+    if(callId){
+        await remove(ref(db,"calls/"+callId));
+        pc.close();
+        callId=null;
+        remoteVideo.srcObject=null;
+        log("🔴 FIN");
     }
-    connectionStatusSpan.innerHTML = "⚡ Esperando número...";
-    log("🚀 App inicializada, esperando registro");
+};
 
-    window.addEventListener('beforeunload', () => {
-        if (myClientId) remove(ref(db, `presence/${myClientId}`));
-        if (peerConnection) peerConnection.close();
-        if (localStream) localStream.getTracks().forEach(t => t.stop());
-    });
+// 🔥 FIX AUTOPLAY
+document.body.addEventListener("click", ()=>{
+    remoteVideo.play().catch(()=>{});
+});
+
 </script>
 </body>
 </html>
