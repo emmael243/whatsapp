@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MyOW WebRTC DEBUG</title>
+<title>WebRTC FIX FINAL</title>
 
 <style>
 body { font-family: Arial; background:#0f172a; color:white; padding:20px; }
-video { width:300px; background:black; border-radius:10px; }
+video { width:300px; background:black; border-radius:10px; margin:5px;}
 button { padding:10px; margin:5px; }
 #debug { background:#111; padding:10px; margin-top:10px; max-height:200px; overflow:auto; font-size:12px;}
 </style>
@@ -15,7 +15,7 @@ button { padding:10px; margin:5px; }
 
 <body>
 
-<h2>📞 WebRTC Debug</h2>
+<h2>📞 WebRTC FIX</h2>
 
 <input id="phone" placeholder="Tu número">
 <button onclick="register()">Registrar</button>
@@ -25,9 +25,10 @@ button { padding:10px; margin:5px; }
 
 <h3>Video</h3>
 <video id="localVideo" autoplay muted playsinline></video>
-<video id="remoteVideo" autoplay playsinline></video>
+<video id="remoteVideo" playsinline controls></video>
 
 <br>
+<button onclick="forcePlay()">▶️ Forzar audio</button>
 <button onclick="hangup()">Colgar</button>
 
 <div id="debug"></div>
@@ -37,7 +38,7 @@ button { padding:10px; margin:5px; }
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-app.js";
 import { getDatabase, ref, set, onValue, push, remove, update } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-database.js";
 
-// 🔥 CONFIG
+// 🔥 FIREBASE
 const firebaseConfig = {
     databaseURL: "https://myow-cdb46-default-rtdb.firebaseio.com"
 };
@@ -45,7 +46,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// 🔥 TURN + STUN
+// 🔥 ICE
 const iceServers = [
     { urls: "stun:stun.l.google.com:19302" },
     {
@@ -65,6 +66,11 @@ const localVideo = document.getElementById("localVideo");
 const remoteVideo = document.getElementById("remoteVideo");
 const debug = document.getElementById("debug");
 
+// 🔥 CONFIG VIDEO REMOTO (CLAVE)
+remoteVideo.autoplay = true;
+remoteVideo.playsInline = true;
+remoteVideo.controls = true;
+
 // 🔥 LOG
 function log(msg){
     console.log(msg);
@@ -81,7 +87,7 @@ async function getMedia(){
     localStream.getTracks().forEach(t=>log("➡️ "+t.kind));
 }
 
-// 🔥 PEER
+// 🔥 PEER CONNECTION
 function createPC(){
 
     pc = new RTCPeerConnection({iceServers});
@@ -102,15 +108,20 @@ function createPC(){
         log("🧊 "+pc.iceConnectionState);
     };
 
+    // 🔥 FIX PRINCIPAL
     pc.ontrack = (event)=>{
         log("📺 TRACK: "+event.track.kind);
 
-        if(event.streams[0]){
+        // 👇 SOLO UNA VEZ
+        if(!remoteVideo.srcObject){
             remoteVideo.srcObject = event.streams[0];
+            log("🎬 Stream remoto asignado UNA sola vez");
 
-            remoteVideo.play()
-            .then(()=>log("▶️ PLAY OK"))
-            .catch(e=>log("❌ autoplay "+e.message));
+            setTimeout(()=>{
+                remoteVideo.play()
+                .then(()=>log("▶️ PLAY OK"))
+                .catch(e=>log("❌ autoplay "+e.message));
+            },200);
         }
     };
 }
@@ -127,7 +138,7 @@ window.register = async ()=>{
     listenCalls();
 };
 
-// 🔥 LIST USERS
+// 🔥 LISTAR USUARIOS
 function listenUsers(){
     onValue(ref(db,"users"),snap=>{
         let html="";
@@ -184,7 +195,7 @@ window.call = async (id)=>{
     });
 };
 
-// 🔥 RECIBIR
+// 🔥 RECIBIR LLAMADA
 function listenCalls(){
     onValue(ref(db,"calls"), async snap=>{
         const calls = snap.val();
@@ -223,6 +234,13 @@ function listenCalls(){
     });
 }
 
+// 🔥 FORZAR AUDIO
+window.forcePlay = ()=>{
+    remoteVideo.play()
+    .then(()=>log("▶️ PLAY manual OK"))
+    .catch(e=>log("❌ PLAY manual error: "+e.message));
+};
+
 // 🔥 COLGAR
 window.hangup = async ()=>{
     if(callId){
@@ -234,11 +252,14 @@ window.hangup = async ()=>{
     }
 };
 
-// 🔥 FIX AUTOPLAY
+// 🔥 CLICK GLOBAL
 document.body.addEventListener("click", ()=>{
-    remoteVideo.play().catch(()=>{});
+    if(remoteVideo.srcObject){
+        remoteVideo.play().catch(()=>{});
+    }
 });
 
 </script>
+
 </body>
 </html>
