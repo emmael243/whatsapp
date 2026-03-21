@@ -3,19 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WebRTC FIX FINAL</title>
+<title>WebRTC FINAL PRO</title>
 
 <style>
 body { font-family: Arial; background:#0f172a; color:white; padding:20px; }
 video { width:300px; background:black; border-radius:10px; margin:5px;}
 button { padding:10px; margin:5px; }
-#debug { background:#111; padding:10px; margin-top:10px; max-height:200px; overflow:auto; font-size:12px;}
+#debug { background:#111; padding:10px; margin-top:10px; max-height:220px; overflow:auto; font-size:12px;}
 </style>
 </head>
 
 <body>
 
-<h2>📞 WebRTC FIX</h2>
+<h2>📞 WebRTC FINAL</h2>
 
 <input id="phone" placeholder="Tu número">
 <button onclick="register()">Registrar</button>
@@ -28,7 +28,7 @@ button { padding:10px; margin:5px; }
 <video id="remoteVideo" playsinline controls></video>
 
 <br>
-<button onclick="forcePlay()">▶️ Forzar audio</button>
+<button onclick="forcePlay()">▶️ Activar audio</button>
 <button onclick="hangup()">Colgar</button>
 
 <div id="debug"></div>
@@ -66,10 +66,18 @@ const localVideo = document.getElementById("localVideo");
 const remoteVideo = document.getElementById("remoteVideo");
 const debug = document.getElementById("debug");
 
-// 🔥 CONFIG VIDEO REMOTO (CLAVE)
-remoteVideo.autoplay = true;
+// 🔥 CONFIG VIDEO REMOTO
+remoteVideo.autoplay = false;
 remoteVideo.playsInline = true;
 remoteVideo.controls = true;
+remoteVideo.muted = false;
+remoteVideo.volume = 1;
+
+// DEBUG VIDEO
+remoteVideo.onloadedmetadata = () => log("📥 Metadata cargada");
+remoteVideo.onplay = () => log("▶️ EVENTO PLAY");
+remoteVideo.onpause = () => log("⏸️ PAUSA");
+remoteVideo.onerror = () => log("❌ ERROR VIDEO");
 
 // 🔥 LOG
 function log(msg){
@@ -87,7 +95,7 @@ async function getMedia(){
     localStream.getTracks().forEach(t=>log("➡️ "+t.kind));
 }
 
-// 🔥 PEER CONNECTION
+// 🔥 PEER
 function createPC(){
 
     pc = new RTCPeerConnection({iceServers});
@@ -108,20 +116,21 @@ function createPC(){
         log("🧊 "+pc.iceConnectionState);
     };
 
-    // 🔥 FIX PRINCIPAL
+    // 🔥 FIX DEFINITIVO
     pc.ontrack = (event)=>{
-        log("📺 TRACK: "+event.track.kind);
+        log("📺 TRACK: " + event.track.kind);
 
-        // 👇 SOLO UNA VEZ
         if(!remoteVideo.srcObject){
             remoteVideo.srcObject = event.streams[0];
-            log("🎬 Stream remoto asignado UNA sola vez");
+            log("🎬 Stream remoto asignado");
 
-            setTimeout(()=>{
+            remoteVideo.onloadedmetadata = () => {
+                log("📥 Metadata cargada");
+
                 remoteVideo.play()
-                .then(()=>log("▶️ PLAY OK"))
-                .catch(e=>log("❌ autoplay "+e.message));
-            },200);
+                    .then(()=>log("▶️ PLAY OK"))
+                    .catch(e=>log("❌ autoplay "+e.message));
+            };
         }
     };
 }
@@ -138,7 +147,7 @@ window.register = async ()=>{
     listenCalls();
 };
 
-// 🔥 LISTAR USUARIOS
+// 🔥 USUARIOS
 function listenUsers(){
     onValue(ref(db,"users"),snap=>{
         let html="";
@@ -195,7 +204,7 @@ window.call = async (id)=>{
     });
 };
 
-// 🔥 RECIBIR LLAMADA
+// 🔥 RECIBIR
 function listenCalls(){
     onValue(ref(db,"calls"), async snap=>{
         const calls = snap.val();
@@ -237,8 +246,8 @@ function listenCalls(){
 // 🔥 FORZAR AUDIO
 window.forcePlay = ()=>{
     remoteVideo.play()
-    .then(()=>log("▶️ PLAY manual OK"))
-    .catch(e=>log("❌ PLAY manual error: "+e.message));
+    .then(()=>log("▶️ PLAY MANUAL OK"))
+    .catch(e=>log("❌ ERROR PLAY: "+e.message));
 };
 
 // 🔥 COLGAR
