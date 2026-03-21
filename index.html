@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WebRTC FINAL PRO</title>
+<title>WebRTC FINAL FUNCIONANDO</title>
 
 <style>
 body { font-family: Arial; background:#0f172a; color:white; padding:20px; }
@@ -15,7 +15,7 @@ button { padding:10px; margin:5px; }
 
 <body>
 
-<h2>📞 WebRTC FINAL</h2>
+<h2>📞 WebRTC FINAL REAL</h2>
 
 <input id="phone" placeholder="Tu número">
 <button onclick="register()">Registrar</button>
@@ -28,7 +28,7 @@ button { padding:10px; margin:5px; }
 <video id="remoteVideo" playsinline controls></video>
 
 <br>
-<button onclick="forcePlay()">▶️ Activar audio</button>
+<button onclick="forcePlayManual()">▶️ Activar audio</button>
 <button onclick="hangup()">Colgar</button>
 
 <div id="debug"></div>
@@ -67,23 +67,42 @@ const remoteVideo = document.getElementById("remoteVideo");
 const debug = document.getElementById("debug");
 
 // 🔥 CONFIG VIDEO REMOTO
-remoteVideo.autoplay = false;
+remoteVideo.autoplay = true;
+remoteVideo.muted = false;
 remoteVideo.playsInline = true;
 remoteVideo.controls = true;
-remoteVideo.muted = false;
 remoteVideo.volume = 1;
-
-// DEBUG VIDEO
-remoteVideo.onloadedmetadata = () => log("📥 Metadata cargada");
-remoteVideo.onplay = () => log("▶️ EVENTO PLAY");
-remoteVideo.onpause = () => log("⏸️ PAUSA");
-remoteVideo.onerror = () => log("❌ ERROR VIDEO");
 
 // 🔥 LOG
 function log(msg){
     console.log(msg);
     debug.innerHTML += "<div>"+msg+"</div>";
     debug.scrollTop = debug.scrollHeight;
+}
+
+// 🔥 FUNCIÓN CLAVE (FIX REAL)
+function forcePlayWithRetry(){
+    let attempts = 0;
+
+    const tryPlay = () => {
+        attempts++;
+
+        remoteVideo.play()
+        .then(()=>{
+            log("▶️ PLAY OK intento " + attempts);
+        })
+        .catch(()=>{
+            log("❌ autoplay intento " + attempts);
+
+            if(attempts < 10){
+                setTimeout(tryPlay, 300);
+            } else {
+                log("⚠️ Requiere interacción usuario");
+            }
+        });
+    };
+
+    tryPlay();
 }
 
 // 🔥 MEDIA
@@ -124,13 +143,7 @@ function createPC(){
             remoteVideo.srcObject = event.streams[0];
             log("🎬 Stream remoto asignado");
 
-            remoteVideo.onloadedmetadata = () => {
-                log("📥 Metadata cargada");
-
-                remoteVideo.play()
-                    .then(()=>log("▶️ PLAY OK"))
-                    .catch(e=>log("❌ autoplay "+e.message));
-            };
+            forcePlayWithRetry();
         }
     };
 }
@@ -243,8 +256,8 @@ function listenCalls(){
     });
 }
 
-// 🔥 FORZAR AUDIO
-window.forcePlay = ()=>{
+// 🔥 BOTÓN MANUAL
+window.forcePlayManual = ()=>{
     remoteVideo.play()
     .then(()=>log("▶️ PLAY MANUAL OK"))
     .catch(e=>log("❌ ERROR PLAY: "+e.message));
