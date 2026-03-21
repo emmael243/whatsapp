@@ -2,298 +2,95 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>MyOW - WebRTC Simple</title>
+<title>WebRTC Básico - Oferta/Respuesta</title>
 <style>
-    * { box-sizing: border-box; margin:0; padding:0; }
-    body { font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background:#0a0f1c; color:#eef4ff; padding:20px; }
-    .container { max-width:1400px; margin:0 auto; }
-    .header { background:#111827; border-radius:28px; padding:18px 24px; margin-bottom:24px; display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:16px; }
-    .logo h1 { font-size:1.7rem; background: linear-gradient(135deg,#60a5fa,#a855f7); background-clip:text; -webkit-background-clip:text; color:transparent; }
-    .user-area { display:flex; gap:12px; align-items:center; background:#1f2937; padding:8px 16px; border-radius:60px; }
-    .user-area input { background:#0f172a; border:1px solid #334155; color:white; padding:10px 16px; border-radius:40px; font-size:1rem; outline:none; width:180px; }
-    .user-area button { background:#3b82f6; border:none; padding:8px 20px; border-radius:40px; font-weight:bold; cursor:pointer; color:white; }
-    .status-badge { background:#10b98120; border-left:4px solid #10b981; padding:8px 14px; border-radius:40px; font-size:0.85rem; }
-    .dashboard { display:flex; flex-wrap:wrap; gap:24px; }
-    .devices-panel { flex:1.2; min-width:260px; background:#111827; border-radius:28px; padding:20px; }
-    .video-panel { flex:2; min-width:320px; background:#111827; border-radius:28px; padding:20px; }
-    .panel-title { font-size:1.3rem; font-weight:600; margin-bottom:16px; border-left:4px solid #3b82f6; padding-left:12px; }
-    .device-list { list-style:none; max-height:500px; overflow-y:auto; }
-    .device-item { background:#1e293b; margin:12px 0; padding:14px 16px; border-radius:20px; display:flex; justify-content:space-between; align-items:center; }
-    .device-phone { font-weight:bold; font-size:1.1rem; }
-    .call-btn { background:#10b981; border:none; padding:8px 18px; border-radius:40px; font-weight:bold; cursor:pointer; color:white; }
-    .video-container { display:flex; flex-wrap:wrap; gap:20px; margin-top:15px; }
-    .video-box { background:#00000066; border-radius:24px; overflow:hidden; text-align:center; flex:1; min-width:250px; }
-    .video-box video { width:100%; background:#0a0a0a; border-radius:20px; transform:scaleX(-1); max-height:280px; object-fit:cover; }
-    .video-label { background: rgba(0,0,0,0.7); padding:5px; font-size:0.8rem; }
-    .call-controls { margin-top:20px; display:flex; justify-content:center; gap:20px; flex-wrap:wrap; }
-    .action-btn { background:#ef4444; border:none; padding:12px 28px; border-radius:60px; font-weight:bold; font-size:1rem; color:white; cursor:pointer; }
-    .action-btn.warning { background:#eab308; color:black; }
-    .incoming-card { background:#f97316dd; backdrop-filter:blur(12px); padding:12px 18px; border-radius:60px; display:inline-flex; align-items:center; gap:16px; margin-bottom:12px; }
-    .hidden { display:none; }
-    .debug-panel { margin-top:12px; background:#1e1e2f; padding:8px; border-radius:12px; font-size:0.7rem; max-height:150px; overflow-y:auto; font-family:monospace; }
-    button.small { background:#3b82f6; padding:5px 12px; font-size:0.7rem; margin-top:8px; }
-    @media(max-width:760px){ .header{ flex-direction:column; align-items:stretch; } }
+body { font-family: sans-serif; background:#111; color:#eee; padding:20px; }
+video { width: 45%; margin:10px; border-radius:12px; background:#000; }
+textarea { width:100%; height:60px; margin:4px 0; }
+button { padding:8px 16px; margin:4px; }
 </style>
 </head>
 <body>
-<div class="container">
-    <div class="header">
-        <div class="logo"><h1>📞 MyOW Call (STUN + TURN)</h1></div>
-        <div class="user-area">
-            <input type="tel" id="phoneInput" placeholder="+34 600 000 000" autocomplete="off">
-            <button id="setPhoneBtn">✅ Registrar número</button>
-        </div>
-        <div class="status-badge" id="connectionStatus">⚪ Desconectado</div>
-    </div>
-    <div class="dashboard">
-        <div class="devices-panel">
-            <div class="panel-title">📱 Dispositivos activos</div>
-            <ul id="deviceList" class="device-list">
-                <li style="opacity:0.6">🔍 Esperando dispositivos...</li>
-            </ul>
-        </div>
-        <div class="video-panel">
-            <div class="panel-title">🎥 Sala de llamada</div>
-            <div id="incomingNotification" class="hidden"></div>
-            <div class="video-container">
-                <div class="video-box">
-                    <video id="localVideo" autoplay muted playsinline></video>
-                    <div class="video-label">📹 Tú</div>
-                </div>
-                <div class="video-box">
-                    <video id="remoteVideo" autoplay playsinline></video>
-                    <div class="video-label">👤 Remoto</div>
-                </div>
-            </div>
-            <div class="call-controls">
-                <button id="hangupBtn" class="action-btn" style="background:#dc2626;" disabled>📴 Colgar</button>
-                <button id="toggleMicBtn" class="action-btn warning" style="background:#475569;">🎤 Micrófono ON</button>
-                <button id="toggleCamBtn" class="action-btn warning" style="background:#475569;">📷 Cámara ON</button>
-                <button id="playRemoteBtn" class="action-btn small" style="background:#3b82f6; display:none;">🔊 Reproducir remoto</button>
-            </div>
-            <div id="callStatusMsg" style="text-align:center; margin-top:12px; font-size:0.8rem; color:#cbd5e1;"></div>
-            <div class="debug-panel" id="debugLog"></div>
-        </div>
-    </div>
+<h2>WebRTC Básico - Oferta/Respuesta</h2>
+
+<video id="localVideo" autoplay muted></video>
+<video id="remoteVideo" autoplay></video>
+
+<div>
+  <button id="startBtn">🎬 Iniciar cámara</button>
+  <button id="callBtn">📞 Crear Oferta</button>
+  <button id="answerBtn">✅ Crear Respuesta</button>
 </div>
 
-<script type="importmap">
-{
-  "imports": {
-    "firebase/app": "https://www.gstatic.com/firebasejs/10.7.2/firebase-app.js",
-    "firebase/database": "https://www.gstatic.com/firebasejs/10.7.2/firebase-database.js"
-  }
-}
-</script>
+<h3>Oferta (JSON)</h3>
+<textarea id="offerArea"></textarea>
+
+<h3>Respuesta (JSON)</h3>
+<textarea id="answerArea"></textarea>
 
 <script type="module">
-import { initializeApp } from "firebase/app";
-import { getDatabase, ref, set, onValue, push, remove, onDisconnect, update } from "firebase/database";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-app.js";
+import { getDatabase, ref, set, onValue, push } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-database.js";
 
-// ===== FIREBASE CONFIG =====
+// ---- CONFIG FIREBASE ----
 const firebaseConfig = {
   apiKey: "AIzaSyD29ExpZwaXQGV059fQGZ-3i0GMzk353o0",
   authDomain: "myow-cdb46.firebaseapp.com",
   databaseURL: "https://myow-cdb46-default-rtdb.firebaseio.com",
   projectId: "myow-cdb46",
-  storageBucket: "myow-cdb46.firebasestorage.app",
+  storageBucket: "myow-cdb46.appspot.com",
   messagingSenderId: "651159312592",
-  appId: "1:651159312592:web:98404f13e075fdce4d26d5",
-  measurementId: "G-W53ZFMPW7X"
+  appId: "1:651159312592:web:98404f13e075fdce4d26d5"
 };
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// ===== ICE SERVERS =====
-const turnConfig = {
-    urls: [
-        "turn:global.turn.metered.live:3478?transport=udp",
-        "turn:global.turn.metered.live:3478?transport=tcp",
-        "turn:global.turn.metered.live:443?transport=tcp"
-    ],
-    username: "6add749aa39bded58851f0d5",
-    credential: "TF2Z0iD5X45aIWpX"
-};
-const iceServers = [
-    { urls:"stun:stun.l.google.com:19302" },
-    { urls:"stun:stun1.l.google.com:19302" },
-    turnConfig
-];
+// ---- VARIABLES ----
+let localStream;
+let pc;
+const iceServers = [{ urls: "stun:stun.l.google.com:19302" }];
+const localVideo = document.getElementById("localVideo");
+const remoteVideo = document.getElementById("remoteVideo");
+const offerArea = document.getElementById("offerArea");
+const answerArea = document.getElementById("answerArea");
 
-// ===== VARIABLES =====
-let myClientId = sessionStorage.getItem("myow_client_id") || null;
-let myPhoneNumber = "";
-let peerConnection = null;
-let localStream = null;
-let activeCallId = null;
-let isCaller = false;
-let candidateQueue = [];
-let remoteDescSet = false;
-let answerListenerRef = null;
-let callerCandidateListenerRef = null;
-let calleeCandidateListenerRef = null;
-let callNodeListenerRef = null;
-
-// DOM
-const phoneInput = document.getElementById('phoneInput');
-const setPhoneBtn = document.getElementById('setPhoneBtn');
-const deviceListUl = document.getElementById('deviceList');
-const localVideo = document.getElementById('localVideo');
-const remoteVideo = document.getElementById('remoteVideo');
-const hangupBtn = document.getElementById('hangupBtn');
-const toggleMicBtn = document.getElementById('toggleMicBtn');
-const toggleCamBtn = document.getElementById('toggleCamBtn');
-const connectionStatusSpan = document.getElementById('connectionStatus');
-const incomingDiv = document.getElementById('incomingNotification');
-const callStatusSpan = document.getElementById('callStatusMsg');
-const debugLog = document.getElementById('debugLog');
-const playRemoteBtn = document.getElementById('playRemoteBtn');
-
-function log(msg){
-    const time = new Date().toLocaleTimeString();
-    debugLog.innerHTML += `<div>${time}: ${msg}</div>`;
-    debugLog.scrollTop = debugLog.scrollHeight;
-    console.log(msg);
+// ---- FUNCIONES ----
+async function startCamera() {
+    localStream = await navigator.mediaDevices.getUserMedia({video:true, audio:true});
+    localVideo.srcObject = localStream;
+    console.log("🎥 Cámara iniciada");
 }
 
-function generateUUID(){ return 'id-'+Date.now()+'-'+Math.random().toString(36).substr(2,8); }
-
-// ===== PRESENCE =====
-async function updatePresence(){
-    if(!myClientId || !myPhoneNumber) return;
-    const presenceRef = ref(db, `presence/${myClientId}`);
-    await set(presenceRef, { phone: myPhoneNumber, timestamp: Date.now() });
-    onDisconnect(presenceRef).remove();
-    connectionStatusSpan.innerText = `🟢 Conectado como: ${myPhoneNumber}`;
-    log(`✅ Número registrado: ${myPhoneNumber}`);
-}
-
-// ===== ESCUCHAR DISPOSITIVOS =====
-function listenDevices(){
-    const devicesRef = ref(db, 'presence');
-    onValue(devicesRef, snapshot => {
-        deviceListUl.innerHTML = '';
-        let count = 0;
-        snapshot.forEach(child => {
-            const val = child.val();
-            if(val.phone && child.key !== myClientId){
-                const li = document.createElement('li');
-                li.classList.add('device-item');
-                li.innerHTML = `<span class="device-phone">${val.phone}</span>
-                <button class="call-btn" onclick="initiateCall('${child.key}','${val.phone}')">📞 Llamar</button>`;
-                deviceListUl.appendChild(li);
-                count++;
-            }
-        });
-        if(count===0) deviceListUl.innerHTML = '<li style="opacity:0.6">🔍 No hay dispositivos activos</li>';
-    });
-}
-
-// ===== GET LOCAL STREAM =====
-async function getLocalStream(){
-    if(localStream) return localStream;
-    try{
-        const stream = await navigator.mediaDevices.getUserMedia({ video:true, audio:true });
-        localStream = stream;
-        localVideo.srcObject = stream;
-        return stream;
-    }catch(err){
-        alert("No se pudo acceder a cámara/micrófono");
-        log(`❌ Error getUserMedia: ${err.message}`);
-        throw err;
-    }
-}
-
-// ===== PEER CONNECTION =====
-function createPeerConnection(){
-    if(peerConnection) peerConnection.close();
-    const pc = new RTCPeerConnection({ iceServers });
-
-    pc.onicecandidate = (event)=>{
-        if(event.candidate && activeCallId){
-            const candidate = event.candidate;
-            const path = isCaller?'callerCandidates':'calleeCandidates';
-            const candRef = ref(db, `calls/${activeCallId}/${path}/${Date.now()}_${Math.random()}`);
-            set(candRef,candidate);
-            log(`📡 ICE enviado (${candidate.type})`);
-        }
+function createPeerConnection() {
+    pc = new RTCPeerConnection({ iceServers });
+    localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+    pc.ontrack = e => { remoteVideo.srcObject = e.streams[0]; console.log("📡 Track remoto recibido"); };
+    pc.onicecandidate = e => {
+        if(e.candidate) console.log("🔹 ICE candidate", e.candidate);
     };
-
-    pc.ontrack = (event)=>{
-        if(!remoteVideo.srcObject){
-            remoteVideo.srcObject = new MediaStream();
-            log("🆕 Stream remoto creado");
-        }
-        remoteVideo.srcObject.addTrack(event.track);
-        remoteVideo.play().catch(()=>{});
-        log(`📺 Track remoto: ${event.track.kind}`);
-    };
-
-    pc.oniceconnectionstatechange = ()=>{
-        log(`🔄 ICE state: ${pc.iceConnectionState}`);
-        if(pc.iceConnectionState==='failed' || pc.iceConnectionState==='disconnected') endCall();
-    };
-
-    return pc;
 }
 
-// ===== INICIAR LLAMADA =====
-window.initiateCall = async function(calleeId, calleePhone){
-    if(activeCallId) return alert("Ya hay llamada activa");
-    try{
-        const stream = await getLocalStream();
-        const pc = createPeerConnection();
-        stream.getTracks().forEach(track=>pc.addTrack(track,stream));
+// ---- BOTONES ----
+document.getElementById("startBtn").onclick = startCamera;
 
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-
-        const callId = push(ref(db,'calls')).key;
-        activeCallId = callId;
-        isCaller = true;
-
-        await set(ref(db,`calls/${callId}`),{
-            callerId: myClientId,
-            calleeId: calleeId,
-            callerPhone: myPhoneNumber,
-            calleePhone: calleePhone,
-            offer: { sdp: offer.sdp, type: offer.type },
-            status:"calling",
-            createdAt: Date.now()
-        });
-
-        peerConnection = pc;
-        hangupBtn.disabled = false;
-        callStatusSpan.innerText = `📞 Llamando a ${calleePhone}...`;
-        log(`📞 Oferta enviada, callId=${callId}`);
-
-        onValue(ref(db, `calls/${callId}/answer`), async snap=>{
-            const answer = snap.val();
-            if(answer && pc.remoteDescription===null){
-                await pc.setRemoteDescription(new RTCSessionDescription(answer));
-                log("✅ Respuesta aplicada");
-            }
-        });
-
-    }catch(err){ log(`❌ Error iniciarCall: ${err.message}`); }
+document.getElementById("callBtn").onclick = async () => {
+    createPeerConnection();
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    offerArea.value = JSON.stringify(offer);
+    console.log("📢 Oferta creada");
 };
 
-// ===== BOTON REGISTRAR =====
-setPhoneBtn.addEventListener('click', async ()=>{
-    const phone = phoneInput.value.trim();
-    if(!phone) return alert("Ingresa un número");
-    myPhoneNumber = phone;
-
-    if(!myClientId){
-        myClientId = generateUUID();
-        sessionStorage.setItem("myow_client_id", myClientId);
-    }
-
-    await updatePresence();
-    listenDevices();
-    log("🎉 Registro completado");
-});
+document.getElementById("answerBtn").onclick = async () => {
+    createPeerConnection();
+    const offer = JSON.parse(offerArea.value);
+    await pc.setRemoteDescription(offer);
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    answerArea.value = JSON.stringify(answer);
+    console.log("✅ Respuesta creada");
+    // Aplicar la respuesta manualmente en el otro lado
+};
 </script>
 </body>
 </html>
