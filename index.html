@@ -3,24 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>MyOW - Llamadas WebRTC con TURN</title>
+    <title>MyOW - WebRTC con TURN</title>
     <style>
-        /* (Mismo CSS que antes, sin cambios por brevedad) */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        /* Mantén tu CSS original o usa este simplificado */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #0a0f1c;
             color: #eef4ff;
             padding: 20px;
         }
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
+        .container { max-width: 1400px; margin: 0 auto; }
         .header {
             background: #111827;
             border-radius: 28px;
@@ -113,10 +106,7 @@
             justify-content: space-between;
             align-items: center;
         }
-        .device-phone {
-            font-weight: bold;
-            font-size: 1.1rem;
-        }
+        .device-phone { font-weight: bold; font-size: 1.1rem; }
         .call-btn {
             background: #10b981;
             border: none;
@@ -126,14 +116,10 @@
             cursor: pointer;
             color: white;
         }
-        .call-btn:hover {
-            background: #059669;
-        }
         .video-container {
             display: flex;
             flex-wrap: wrap;
             gap: 20px;
-            justify-content: center;
             margin-top: 15px;
         }
         .video-box {
@@ -169,10 +155,7 @@
             color: white;
             cursor: pointer;
         }
-        .action-btn.warning {
-            background: #eab308;
-            color: black;
-        }
+        .action-btn.warning { background: #eab308; color: black; }
         .incoming-card {
             background: #f97316dd;
             backdrop-filter: blur(12px);
@@ -183,9 +166,7 @@
             gap: 16px;
             margin-bottom: 12px;
         }
-        .hidden {
-            display: none;
-        }
+        .hidden { display: none; }
         @media (max-width: 760px) {
             .header { flex-direction: column; align-items: stretch; }
         }
@@ -227,6 +208,7 @@
                 <button id="toggleCamBtn" class="action-btn warning" style="background:#475569;">📷 Cámara ON</button>
             </div>
             <div id="callStatusMsg" style="text-align:center; margin-top:12px; font-size:0.8rem; color:#cbd5e1;"></div>
+            <div id="debugLog" style="margin-top: 12px; background:#1e1e2f; padding: 8px; border-radius: 12px; font-size: 0.7rem; max-height: 100px; overflow-y: auto; font-family: monospace;"></div>
         </div>
     </div>
 </div>
@@ -255,27 +237,29 @@
         appId: "1:651159312592:web:98404f13e075fdce4d26d5",
         measurementId: "G-W53ZFMPW7X"
     };
-
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // ========== 🔧 CONFIGURACIÓN DE TURN (¡REEMPLAZA CON TUS DATOS!) ==========
+    // ========== 🔧 CONFIGURACIÓN DE TURN (¡REEMPLAZA CON TUS DATOS REALES!) ==========
+    // Obtén credenciales gratuitas en https://www.metered.ca (50GB/mes gratis)
     const turnConfig = {
-        urls: "turn:tu-turn-server.metered.live:3478?transport=udp",   // Ejemplo: turn:xxxx.metered.live:3478
-        username: "tu_usuario_turn",
-        credential: "tu_contraseña_turn"
+        urls: [
+            "turn:global.turn.metered.live:3478?transport=udp",
+            "turn:global.turn.metered.live:3478?transport=tcp"
+        ],
+        username: "TU_USERNAME",      // Cámbialo por tu username de Metered
+        credential: "TU_CREDENTIAL"   // Cámbialo por tu password
     };
-    // Si tienes múltiples servidores TURN, puedes agregar más objetos al arreglo.
+    // Si no tienes TURN, usa solo STUN pero puede fallar en redes móviles.
     // =========================================================================
 
-    // Servidores ICE (STUN + TURN)
     const iceServers = [
         { urls: "stun:stun.l.google.com:19302" },
         { urls: "stun:stun1.l.google.com:19302" },
-        turnConfig  // Agrega tu TURN configurado arriba
+        turnConfig
     ];
 
-    // ---------- VARIABLES GLOBALES ----------
+    // Variables globales
     let myClientId = null;
     let myPhoneNumber = "";
     let peerConnection = null;
@@ -285,12 +269,14 @@
     let isCaller = false;
     let candidateQueue = [];
     let remoteDescSet = false;
+
+    // Listeners
     let answerListenerRef = null;
     let callerCandidateListenerRef = null;
     let calleeCandidateListenerRef = null;
     let callNodeListenerRef = null;
 
-    // DOM elements
+    // DOM
     const phoneInput = document.getElementById('phoneInput');
     const setPhoneBtn = document.getElementById('setPhoneBtn');
     const deviceListUl = document.getElementById('deviceList');
@@ -302,9 +288,16 @@
     const connectionStatusSpan = document.getElementById('connectionStatus');
     const incomingDiv = document.getElementById('incomingNotification');
     const callStatusSpan = document.getElementById('callStatusMsg');
+    const debugLog = document.getElementById('debugLog');
 
-    let micEnabled = true;
-    let camEnabled = true;
+    function log(msg) {
+        const time = new Date().toLocaleTimeString();
+        debugLog.innerHTML += `<div>${time}: ${msg}</div>`;
+        debugLog.scrollTop = debugLog.scrollHeight;
+        console.log(msg);
+    }
+
+    let micEnabled = true, camEnabled = true;
 
     function generateUUID() {
         return 'id-' + Date.now() + '-' + Math.random().toString(36).substr(2, 8);
@@ -321,6 +314,7 @@
         });
         onDisconnect(presenceRef).remove();
         connectionStatusSpan.innerHTML = `✅ Conectado como ${myPhoneNumber}`;
+        log(`Presencia actualizada: ${myPhoneNumber}`);
     }
 
     function listenDevices() {
@@ -345,9 +339,9 @@
                 const li = document.createElement('li');
                 li.className = 'device-item';
                 li.innerHTML = `
-                    <div class="device-info">
+                    <div>
                         <span class="device-phone">📞 ${dev.phoneNumber}</span>
-                        <span class="device-id">🆔 ${dev.clientId.slice(0,8)}...</span>
+                        <span style="font-size:0.7rem;">🆔 ${dev.clientId.slice(0,8)}...</span>
                     </div>
                     <button class="call-btn" data-clientid="${dev.clientId}" data-phone="${dev.phoneNumber}">🔊 Llamar</button>
                 `;
@@ -365,73 +359,86 @@
         const calleeId = btn.getAttribute('data-clientid');
         const calleePhone = btn.getAttribute('data-phone');
         if (!myPhoneNumber) {
-            alert("Primero registra tu número de teléfono");
+            alert("Primero registra tu número");
             return;
         }
         if (activeCallId) {
-            alert("Ya hay una llamada activa. Cuelga antes de llamar.");
+            alert("Ya hay una llamada activa");
             return;
         }
         await initiateCall(calleeId, calleePhone);
     }
 
-    // ---- WebRTC con TURN integrado ----
-    function createPeerConnection() {
-        if (peerConnection) peerConnection.close();
-        const configuration = { iceServers };
-        peerConnection = new RTCPeerConnection(configuration);
-        remoteDescSet = false;
-        candidateQueue = [];
+    async function getLocalStream() {
+        if (localStream) return localStream;
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            localStream = stream;
+            localVideo.srcObject = stream;
+            updateMediaButtons();
+            log("Stream local obtenido");
+            return stream;
+        } catch (err) {
+            log(`Error obteniendo medios: ${err.message}`);
+            alert("No se pudo acceder a cámara/micrófono. Verifica permisos.");
+            throw err;
+        }
+    }
 
-        peerConnection.onicecandidate = (event) => {
+    function createPeerConnection() {
+        if (peerConnection) {
+            peerConnection.close();
+        }
+        const pc = new RTCPeerConnection({ iceServers });
+        pc.onicecandidate = (event) => {
             if (event.candidate && activeCallId) {
                 const candidate = event.candidate;
-                const candidateRef = ref(db, `calls/${activeCallId}/${isCaller ? 'callerCandidates' : 'calleeCandidates'}/${Date.now()}_${Math.random()}`);
-                set(candidateRef, candidate);
+                const path = isCaller ? 'callerCandidates' : 'calleeCandidates';
+                const candRef = ref(db, `calls/${activeCallId}/${path}/${Date.now()}_${Math.random()}`);
+                set(candRef, candidate);
+                log(`ICE candidate enviado: ${candidate.candidate.slice(0, 50)}...`);
             }
         };
-
-        peerConnection.ontrack = (event) => {
+        pc.oniceconnectionstatechange = () => {
+            log(`ICE connection state: ${pc.iceConnectionState}`);
+            if (pc.iceConnectionState === 'connected') {
+                callStatusSpan.innerText = `✅ Conectado - medios fluyendo`;
+            } else if (pc.iceConnectionState === 'failed') {
+                log("ICE falló - posiblemente falta TURN");
+                endCall();
+            }
+        };
+        pc.ontrack = (event) => {
+            log(`Track recibido: ${event.track.kind}`);
             if (event.streams && event.streams[0]) {
                 remoteVideo.srcObject = event.streams[0];
             } else {
-                if (remoteVideo.srcObject) {
-                    remoteVideo.srcObject.addTrack(event.track);
-                } else {
-                    const newStream = new MediaStream();
-                    newStream.addTrack(event.track);
-                    remoteVideo.srcObject = newStream;
+                if (!remoteVideo.srcObject) {
+                    remoteVideo.srcObject = new MediaStream();
                 }
+                remoteVideo.srcObject.addTrack(event.track);
             }
         };
-
-        peerConnection.onconnectionstatechange = () => {
-            if (peerConnection && (peerConnection.connectionState === 'disconnected' || peerConnection.connectionState === 'failed')) {
+        pc.onconnectionstatechange = () => {
+            log(`Connection state: ${pc.connectionState}`);
+            if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
                 endCall();
-                callStatusSpan.innerText = "🔌 Llamada perdida";
             }
         };
-        return peerConnection;
+        return pc;
     }
 
     async function initiateCall(calleeId, calleePhone) {
         try {
-            if (!localStream) {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                localVideo.srcObject = localStream;
-                updateMediaButtons();
-            }
-            createPeerConnection();
-            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-
-            const offer = await peerConnection.createOffer();
-            await peerConnection.setLocalDescription(offer);
-
+            const stream = await getLocalStream();
+            const pc = createPeerConnection();
+            stream.getTracks().forEach(track => pc.addTrack(track, stream));
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
             const callId = push(ref(db, 'calls')).key;
             activeCallId = callId;
             currentCallPeerId = calleeId;
             isCaller = true;
-
             const callRef = ref(db, `calls/${callId}`);
             await set(callRef, {
                 callerId: myClientId,
@@ -442,19 +449,20 @@
                 status: "calling",
                 createdAt: Date.now()
             });
-
+            peerConnection = pc;
             callStatusSpan.innerText = `📞 Llamando a ${calleePhone}...`;
             hangupBtn.disabled = false;
+            log(`Oferta enviada, callId=${callId}`);
 
-            // Escuchar respuesta
             answerListenerRef = onValue(ref(db, `calls/${callId}/answer`), async (snap) => {
                 const answer = snap.val();
                 if (answer && peerConnection && peerConnection.remoteDescription === null) {
                     await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
                     remoteDescSet = true;
                     while (candidateQueue.length) {
-                        await peerConnection.addIceCandidate(new RTCIceCandidate(candidateQueue.shift()));
+                        await peerConnection.addIceCandidate(candidateQueue.shift());
                     }
+                    log("Respuesta recibida y aplicada");
                     callStatusSpan.innerText = `🔊 En llamada con ${calleePhone}`;
                 }
             });
@@ -469,7 +477,7 @@
                             } else {
                                 candidateQueue.push(cand);
                             }
-                        } catch(e) { console.warn("ICE error", e); }
+                        } catch(e) { log(`Error ICE: ${e.message}`); }
                     });
                 }
             });
@@ -477,10 +485,9 @@
             callNodeListenerRef = onValue(ref(db, `calls/${callId}`), (snap) => {
                 if (!snap.exists() && activeCallId === callId) endCall();
             });
-
         } catch (err) {
-            console.error("Error initiateCall", err);
-            alert("Error al iniciar llamada: " + err.message);
+            log(`Error initiateCall: ${err.message}`);
+            alert("No se pudo iniciar la llamada: " + err.message);
             resetCallUI();
         }
     }
@@ -508,8 +515,8 @@
         incomingDiv.innerHTML = `
             <div class="incoming-card">
                 <span>📞 Llamada entrante de ${callData.callerPhone || "desconocido"}</span>
-                <button id="acceptCallBtn" style="background:#22c55e; border:none; padding:6px 20px; border-radius:40px;">Aceptar</button>
-                <button id="rejectCallBtn" style="background:#ef4444; border:none; padding:6px 18px; border-radius:40px;">Rechazar</button>
+                <button id="acceptCallBtn" style="background:#22c55e;">Aceptar</button>
+                <button id="rejectCallBtn" style="background:#ef4444;">Rechazar</button>
             </div>
         `;
         document.getElementById('acceptCallBtn')?.addEventListener('click', async () => {
@@ -525,34 +532,28 @@
     async function acceptCall(callId, callData) {
         if (activeCallId) return;
         try {
-            if (!localStream) {
-                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                localVideo.srcObject = localStream;
-                updateMediaButtons();
-            }
-            createPeerConnection();
-            localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-
-            const callRef = ref(db, `calls/${callId}`);
-            const offerSnap = await get(ref(db, `calls/${callId}/offer`));
-            const offer = offerSnap.val();
+            const stream = await getLocalStream();
+            const pc = createPeerConnection();
+            stream.getTracks().forEach(track => pc.addTrack(track, stream));
+            // Obtener la oferta de los datos (ya la tenemos en callData)
+            const offer = callData.offer;
             if (!offer) throw new Error("Oferta no encontrada");
-
-            await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+            await pc.setRemoteDescription(new RTCSessionDescription(offer));
             remoteDescSet = true;
             while (candidateQueue.length) {
-                await peerConnection.addIceCandidate(new RTCIceCandidate(candidateQueue.shift()));
+                await pc.addIceCandidate(candidateQueue.shift());
             }
-
-            const answer = await peerConnection.createAnswer();
-            await peerConnection.setLocalDescription(answer);
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            const callRef = ref(db, `calls/${callId}`);
             await update(callRef, { answer: { sdp: answer.sdp, type: answer.type }, status: "accepted" });
-
             activeCallId = callId;
             currentCallPeerId = callData.callerId;
             isCaller = false;
+            peerConnection = pc;
             hangupBtn.disabled = false;
             callStatusSpan.innerText = `📞 En llamada con ${callData.callerPhone}`;
+            log("Respuesta enviada, llamada aceptada");
 
             calleeCandidateListenerRef = onValue(ref(db, `calls/${callId}/callerCandidates`), (snap) => {
                 const candidates = snap.val();
@@ -570,16 +571,16 @@
             callNodeListenerRef = onValue(ref(db, `calls/${callId}`), (snap) => {
                 if (!snap.exists() && activeCallId === callId) endCall();
             });
-
         } catch (err) {
-            console.error("Error acceptCall", err);
-            alert("No se pudo aceptar la llamada");
+            log(`Error acceptCall: ${err.message}`);
+            alert("Error al aceptar llamada: " + err.message);
             resetCallUI();
         }
     }
 
     async function rejectCall(callId) {
         await remove(ref(db, `calls/${callId}`));
+        log("Llamada rechazada");
     }
 
     async function endCall() {
@@ -603,13 +604,14 @@
             remoteDescSet = false;
             candidateQueue = [];
             isCaller = false;
+            log("Llamada finalizada");
         }
     }
 
     function resetCallUI() {
         if (activeCallId) endCall();
-        else {
-            if (peerConnection) peerConnection.close();
+        else if (peerConnection) {
+            peerConnection.close();
             peerConnection = null;
             remoteVideo.srcObject = null;
             hangupBtn.disabled = true;
@@ -660,7 +662,7 @@
     setPhoneBtn.addEventListener('click', async () => {
         let phone = phoneInput.value.trim();
         if (!phone) {
-            alert("Ingresa un número de teléfono");
+            alert("Ingresa un número");
             return;
         }
         myPhoneNumber = phone;
