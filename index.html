@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>MyOW - WebRTC Simple</title>
+    <title>MyOW - WebRTC con reproducción manual</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -158,20 +158,29 @@
             overflow-y: auto;
             font-family: monospace;
         }
-        button.small {
+        .play-btn-large {
             background: #3b82f6;
-            padding: 5px 12px;
-            font-size: 0.7rem;
-            margin-top: 8px;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 60px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-top: 15px;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s;
         }
-        .info-note {
+        .play-btn-large:hover { transform: scale(1.02); background: #2563eb; }
+        .info-box {
             background: #2d3748;
             border-left: 4px solid #fbbf24;
-            padding: 8px 12px;
+            padding: 12px;
             margin: 12px 0;
-            border-radius: 12px;
-            font-size: 0.8rem;
+            border-radius: 16px;
+            font-size: 0.9rem;
             color: #fde047;
+            text-align: center;
         }
         @media (max-width: 760px) { .header { flex-direction: column; align-items: stretch; } }
     </style>
@@ -206,15 +215,16 @@
                     <div class="video-label">👤 Remoto</div>
                 </div>
             </div>
-            <div class="info-note" id="remotePlayHint" style="display: none;">
-                ℹ️ En móviles, el video remoto puede no iniciarse automáticamente. Toca el botón <strong>"🔊 Reproducir remoto"</strong> para verlo.
+            <div id="remotePlayHint" class="info-box hidden">
+                ⚠️ El video remoto está listo, pero tu navegador bloqueó la reproducción automática.<br>
+                <strong>👉 Toca el botón azul de abajo para verlo.</strong>
             </div>
             <div class="call-controls">
                 <button id="hangupBtn" class="action-btn" style="background:#dc2626;" disabled>📴 Colgar</button>
                 <button id="toggleMicBtn" class="action-btn warning" style="background:#475569;">🎤 Micrófono ON</button>
                 <button id="toggleCamBtn" class="action-btn warning" style="background:#475569;">📷 Cámara ON</button>
-                <button id="playRemoteBtn" class="action-btn small" style="background:#3b82f6; display: none;">🔊 Reproducir remoto</button>
             </div>
+            <button id="playRemoteBtn" class="play-btn-large hidden">🔊 REPRODUCIR VIDEO REMOTO</button>
             <div id="callStatusMsg" style="text-align:center; margin-top:12px; font-size:0.8rem; color:#cbd5e1;"></div>
             <div class="debug-panel" id="debugLog"></div>
         </div>
@@ -249,7 +259,6 @@
     const db = getDatabase(app);
 
     // ==================== ICE SERVERS ====================
-    // Opción: STUN + TURN (con tus credenciales)
     const turnConfig = {
         urls: [
             "turn:global.turn.metered.live:3478?transport=udp",
@@ -278,6 +287,7 @@
     let callerCandidateListenerRef = null;
     let calleeCandidateListenerRef = null;
     let callNodeListenerRef = null;
+    let autoPlayRetryInterval = null;
 
     // DOM
     const phoneInput = document.getElementById('phoneInput');
@@ -300,6 +310,31 @@
         debugLog.innerHTML += `<div>${time}: ${msg}</div>`;
         debugLog.scrollTop = debugLog.scrollHeight;
         console.log(msg);
+    }
+
+    function showPlayButton() {
+        if (!playRemoteBtn.classList.contains('hidden')) return;
+        playRemoteBtn.classList.remove('hidden');
+        remotePlayHint.classList.remove('hidden');
+        log("🔘 Botón de reproducción manual activado");
+        // Intentar reproducción automática cada 2 segundos durante 10 segundos
+        if (autoPlayRetryInterval) clearInterval(autoPlayRetryInterval);
+        let attempts = 0;
+        autoPlayRetryInterval = setInterval(() => {
+            if (remoteVideo.srcObject && remoteVideo.srcObject.getTracks().length > 0) {
+                remoteVideo.play().then(() => {
+                    log("✅ Reproducción automática exitosa en reintento");
+                    clearInterval(autoPlayRetryInterval);
+                    playRemoteBtn.classList.add('hidden');
+                    remotePlayHint.classList.add('hidden');
+                }).catch(e => {
+                    attempts++;
+                    if (attempts >= 5) clearInterval(autoPlayRetryInterval);
+                });
+            } else {
+                clearInterval(autoPlayRetryInterval);
+            }
+        }, 2000);
     }
 
     function generateUUID() {
@@ -400,7 +435,7 @@
                 const path = isCaller ? 'callerCandidates' : 'calleeCandidates';
                 const candRef = ref(db, `calls/${activeCallId}/${path}/${Date.now()}_${Math.random()}`);
                 set(candRef, candidate);
-                log(`📡 ICE candidate enviado (${candidate.type}): ${candidate.candidate.slice(0, 50)}...`);
+                log(`📡 ICE candidate enviado (${candidate.type})`);
             }
         };
         
@@ -409,17 +444,14 @@
             if (pc.iceConnectionState === 'connected') {
                 callStatusSpan.innerText = `✅ Conectado - Video y audio en curso`;
                 log("🎉 CONEXIÓN ESTABLECIDA - Medios fluyendo");
-                // Mostrar botón de reproducción si aún no se ha mostrado
+                // Si ya hay stream remoto, mostrar botón
                 if (remoteVideo.srcObject && remoteVideo.srcObject.getTracks().length > 0) {
-                    playRemoteBtn.style.display = 'inline-block';
-                    remotePlayHint.style.display = 'block';
+                    showPlayButton();
                 }
                 remoteVideo.play().catch(e => log(`⚠️ Autoplay automático falló: ${e.message}`));
             } else if (pc.iceConnectionState === 'failed') {
                 log("❌ ICE falló - Verifica TURN o conectividad de red");
                 endCall();
-            } else if (pc.iceConnectionState === 'disconnected') {
-                log("⚠️ ICE desconectado, posible pérdida de red");
             }
         };
         
@@ -431,10 +463,9 @@
             }
             remoteVideo.srcObject.addTrack(event.track);
             log(`➕ Tracks en stream remoto: ${remoteVideo.srcObject.getTracks().length}`);
-            // Mostrar el botón de reproducción y la pista tan pronto como haya tracks
+            // Mostrar botón de reproducción manual tan pronto como haya algún track
             if (remoteVideo.srcObject.getTracks().length > 0) {
-                playRemoteBtn.style.display = 'inline-block';
-                remotePlayHint.style.display = 'block';
+                showPlayButton();
             }
             remoteVideo.play().catch(e => log(`⚠️ Autoplay en ontrack bloqueado: ${e.message}`));
         };
@@ -444,10 +475,6 @@
             if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
                 endCall();
             }
-        };
-        
-        pc.onicegatheringstatechange = () => {
-            log(`🔄 ICE gathering state: ${pc.iceGatheringState}`);
         };
         
         return pc;
@@ -633,8 +660,9 @@
             remoteDescSet = false;
             candidateQueue = [];
             isCaller = false;
-            playRemoteBtn.style.display = 'none';
-            remotePlayHint.style.display = 'none';
+            playRemoteBtn.classList.add('hidden');
+            remotePlayHint.classList.add('hidden');
+            if (autoPlayRetryInterval) clearInterval(autoPlayRetryInterval);
             log("🔴 Llamada finalizada");
         }
     }
@@ -693,7 +721,9 @@
             remoteVideo.play()
                 .then(() => {
                     log("▶️ Reproducción manual iniciada");
-                    remotePlayHint.style.display = 'none';
+                    playRemoteBtn.classList.add('hidden');
+                    remotePlayHint.classList.add('hidden');
+                    if (autoPlayRetryInterval) clearInterval(autoPlayRetryInterval);
                 })
                 .catch(e => log(`❌ Error al reproducir manual: ${e.message}`));
         } else {
