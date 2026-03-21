@@ -433,7 +433,9 @@
             if (event.candidate && activeCallId) {
                 const candidate = event.candidate;
                 const path = isCaller ? 'callerCandidates' : 'calleeCandidates';
-                const candRef = ref(db, `calls/${activeCallId}/${path}/${Date.now()}_${Math.random()}`);
+                // Evitar puntos en la clave (Firebase no permite . # $ [ ])
+                const uniqueKey = `${Date.now()}_${Math.floor(Math.random() * 1000000)}`;
+                const candRef = ref(db, `calls/${activeCallId}/${path}/${uniqueKey}`);
                 set(candRef, candidate);
                 log(`📡 ICE candidate enviado (${candidate.type})`);
             }
@@ -444,7 +446,6 @@
             if (pc.iceConnectionState === 'connected') {
                 callStatusSpan.innerText = `✅ Conectado - Video y audio en curso`;
                 log("🎉 CONEXIÓN ESTABLECIDA - Medios fluyendo");
-                // Si ya hay stream remoto, mostrar botón
                 if (remoteVideo.srcObject && remoteVideo.srcObject.getTracks().length > 0) {
                     showPlayButton();
                 }
@@ -463,7 +464,6 @@
             }
             remoteVideo.srcObject.addTrack(event.track);
             log(`➕ Tracks en stream remoto: ${remoteVideo.srcObject.getTracks().length}`);
-            // Mostrar botón de reproducción manual tan pronto como haya algún track
             if (remoteVideo.srcObject.getTracks().length > 0) {
                 showPlayButton();
             }
