@@ -3,9 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MyOW Chat</title>
+<title>MyOW WhatsApp Style</title>
 
 <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#25d366">
 
 <style>
 body {
@@ -15,7 +16,7 @@ body {
     color:white;
 }
 
-/* HEADER tipo WhatsApp */
+/* HEADER */
 .header {
     background:#202c33;
     padding:10px;
@@ -24,11 +25,23 @@ body {
     align-items:center;
 }
 
-.header input {
+.user-area {
+    display:flex;
+    gap:10px;
+}
+
+.user-area input {
     background:#2a3942;
     border:none;
     color:white;
     padding:8px;
+    border-radius:20px;
+}
+
+.user-area button {
+    background:#25d366;
+    border:none;
+    padding:8px 12px;
     border-radius:20px;
 }
 
@@ -44,7 +57,6 @@ body {
     border:none;
     background:none;
     color:#aaa;
-    cursor:pointer;
 }
 
 .tab-btn.active {
@@ -52,30 +64,49 @@ body {
     border-bottom:2px solid #25d366;
 }
 
-/* LISTA contactos */
+/* LISTA */
 .device-list {
-    height:200px;
+    max-height:150px;
     overflow:auto;
 }
 
 .device-item {
-    padding:10px;
-    border-bottom:1px solid #222;
     display:flex;
     justify-content:space-between;
+    padding:10px;
+    border-bottom:1px solid #222;
+}
+
+.call-btn {
+    background:#25d366;
+    border:none;
+    padding:6px 10px;
+    border-radius:20px;
+}
+
+/* VIDEO */
+.video-container {
+    display:flex;
+    gap:10px;
+}
+
+video {
+    width:100%;
+    max-height:200px;
+    background:black;
 }
 
 /* CHAT */
-.chat-box {
-    height:300px;
+.chat-messages {
+    height:250px;
     overflow:auto;
-    background:#111;
+    background:#111b21;
     padding:10px;
 }
 
-.msg {
-    padding:6px 10px;
+.message {
     margin:5px;
+    padding:8px;
     border-radius:10px;
     max-width:70%;
 }
@@ -89,24 +120,37 @@ body {
     background:#202c33;
 }
 
-input,button {
-    outline:none;
+.chat-input {
+    display:flex;
+    gap:10px;
 }
 
-/* VIDEO */
-video {
-    width:100%;
-    max-height:200px;
-    background:black;
+.chat-input input {
+    flex:1;
+    background:#2a3942;
+    border:none;
+    color:white;
+    padding:10px;
+    border-radius:20px;
+}
+
+.chat-input button {
+    background:#25d366;
+    border:none;
+    padding:10px;
+    border-radius:20px;
 }
 
 /* BOTONES */
-.btn {
-    background:#25d366;
+.action-btn {
+    background:red;
     border:none;
-    padding:8px 12px;
+    padding:10px;
     border-radius:20px;
-    cursor:pointer;
+}
+
+.warning {
+    background:#25d366;
 }
 </style>
 </head>
@@ -114,144 +158,142 @@ video {
 <body>
 
 <div class="header">
-    <input id="phoneInput" placeholder="Tu número">
-    <button id="setPhoneBtn" class="btn">OK</button>
+    <div class="user-area">
+        <input id="phoneInput" placeholder="Tu número">
+        <button id="setPhoneBtn">OK</button>
+    </div>
 </div>
 
 <div class="tabs">
     <button class="tab-btn active" data-tab="video">📹</button>
     <button class="tab-btn" data-tab="audio">🎙</button>
     <button class="tab-btn" data-tab="chat">💬</button>
-    <button class="tab-btn" data-tab="group">👥</button>
 </div>
 
 <!-- VIDEO -->
 <div id="videoTab">
     <ul id="videoDeviceList" class="device-list"></ul>
-    <video id="videoLocal" autoplay muted></video>
-    <video id="videoRemote" autoplay></video>
-    <button id="videoHangup">Colgar</button>
+
+    <div class="video-container">
+        <video id="videoLocal" autoplay muted></video>
+        <video id="videoRemote" autoplay></video>
+    </div>
+
+    <button id="videoHangup" class="action-btn">Colgar</button>
 </div>
 
 <!-- AUDIO -->
 <div id="audioTab" style="display:none">
     <ul id="audioDeviceList" class="device-list"></ul>
-    <button id="audioHangup">Colgar</button>
+    <button id="audioHangup" class="action-btn">Colgar</button>
 </div>
 
 <!-- CHAT -->
 <div id="chatTab" style="display:none">
     <ul id="chatDeviceList" class="device-list"></ul>
 
-    <div id="chatMessages" class="chat-box"></div>
+    <div id="chatMessages" class="chat-messages"></div>
 
-    <input id="chatInput">
-    <button id="chatSendBtn">Enviar</button>
-</div>
-
-<!-- GROUP -->
-<div id="groupTab" style="display:none">
-    <input id="groupRoomId">
-    <button id="groupCreateBtn">Crear</button>
-    <button id="groupJoinBtn">Unirse</button>
-
-    <div id="groupVideoGrid"></div>
+    <div class="chat-input">
+        <input id="chatInput">
+        <button id="chatSendBtn">Enviar</button>
+    </div>
 </div>
 
 <script type="module">
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-app.js";
 import { getDatabase, ref, set, onValue, push, remove } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-database.js";
 
 const firebaseConfig = {
-    apiKey: "AIza...",
+    apiKey: "AIzaSy...",
     databaseURL: "https://myow-cdb46-default-rtdb.firebaseio.com"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-/* TURN */
 const iceServers = [
-    { urls:"stun:stun.l.google.com:19302"},
+    { urls: "stun:stun.l.google.com:19302" },
     {
-        urls:"turn:global.turn.metered.live:3478",
-        username:"6add749aa39bded58851f0d5",
-        credential:"TF2Z0iD5X45aIWpX"
+        urls: "turn:global.turn.metered.live:3478",
+        username: "6add749aa39bded58851f0d5",
+        credential: "TF2Z0iD5X45aIWpX"
     }
 ];
 
 let myId = Math.random().toString(36).substr(2,9);
 let myPhone = "";
 
-/* -------- REGISTRO -------- */
-document.getElementById("setPhoneBtn").onclick=()=>{
-    myPhone=document.getElementById("phoneInput").value;
-    set(ref(db,"presence/"+myId),{phone:myPhone});
+/* REGISTRO */
+setPhoneBtn.onclick = () => {
+    myPhone = phoneInput.value;
+    set(ref(db, "presence/" + myId), { phone: myPhone });
 };
-
-/* -------- VIDEO -------- */
-let pc;
-
-async function callUser(id){
-    pc=new RTCPeerConnection({iceServers});
-
-    const stream=await navigator.mediaDevices.getUserMedia({video:true,audio:true});
-    document.getElementById("videoLocal").srcObject=stream;
-
-    stream.getTracks().forEach(t=>pc.addTrack(t,stream));
-
-    pc.ontrack=e=>{
-        document.getElementById("videoRemote").srcObject=e.streams[0];
-    };
-
-    const offer=await pc.createOffer();
-    await pc.setLocalDescription(offer);
-
-    set(ref(db,"calls/"+myId),{offer:offer.sdp,to:id});
-}
 
 /* LISTA */
-onValue(ref(db,"presence"),snap=>{
-    let html="";
-    snap.forEach(c=>{
-        if(c.key!==myId){
-            html+=`<li class="device-item">${c.val().phone}
-            <button onclick="callUser('${c.key}')">Llamar</button></li>`;
-        }
+function loadList(path, element, action){
+    onValue(ref(db, path), snap=>{
+        let html="";
+        snap.forEach(c=>{
+            if(c.key !== myId){
+                html+=`<li class="device-item">${c.val().phone}
+                <button class="call-btn" onclick="${action}('${c.key}')">OK</button></li>`;
+            }
+        });
+        element.innerHTML = html;
     });
-    videoDeviceList.innerHTML=html;
-});
-
-/* -------- CHAT -------- */
-let dc;
-
-async function connectChat(id){
-    pc=new RTCPeerConnection({iceServers});
-    dc=pc.createDataChannel("chat");
-
-    dc.onmessage=e=>{
-        chatMessages.innerHTML+=`<div class="msg received">${e.data}</div>`;
-    };
-
-    const offer=await pc.createOffer();
-    await pc.setLocalDescription(offer);
-
-    set(ref(db,"chat/"+myId),{offer:offer.sdp,to:id});
 }
 
-chatSendBtn.onclick=()=>{
-    dc.send(chatInput.value);
-    chatMessages.innerHTML+=`<div class="msg sent">${chatInput.value}</div>`;
+loadList("presence", videoDeviceList, "callVideo");
+loadList("presence", audioDeviceList, "callAudio");
+loadList("presence", chatDeviceList, "callChat");
+
+/* VIDEO */
+let pc;
+
+window.callVideo = async(id)=>{
+    pc = new RTCPeerConnection({iceServers});
+    const stream = await navigator.mediaDevices.getUserMedia({video:true,audio:true});
+    videoLocal.srcObject = stream;
+    stream.getTracks().forEach(t=>pc.addTrack(t,stream));
+
+    pc.ontrack = e=> videoRemote.srcObject = e.streams[0];
+
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+
+    set(ref(db,"calls/"+myId), {offer:offer.sdp,to:id});
 };
 
-/* -------- TABS -------- */
+/* CHAT */
+let dc;
+
+window.callChat = async(id)=>{
+    pc = new RTCPeerConnection({iceServers});
+    dc = pc.createDataChannel("chat");
+
+    dc.onmessage = e=>{
+        chatMessages.innerHTML += `<div class="message received">${e.data}</div>`;
+    };
+
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+
+    set(ref(db,"chat/"+myId), {offer:offer.sdp,to:id});
+};
+
+chatSendBtn.onclick = ()=>{
+    dc.send(chatInput.value);
+    chatMessages.innerHTML += `<div class="message sent">${chatInput.value}</div>`;
+};
+
+/* TABS */
 document.querySelectorAll(".tab-btn").forEach(btn=>{
     btn.onclick=()=>{
         document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
         btn.classList.add("active");
 
-        ["video","audio","chat","group"].forEach(t=>{
+        ["video","audio","chat"].forEach(t=>{
             document.getElementById(t+"Tab").style.display="none";
         });
 
@@ -259,11 +301,11 @@ document.querySelectorAll(".tab-btn").forEach(btn=>{
     };
 });
 
-/* -------- PWA -------- */
-if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js');
+/* PWA */
+if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("sw.js");
 }
-
 </script>
+
 </body>
 </html>
