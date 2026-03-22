@@ -1,1406 +1,222 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>MyOW - Múltiples modos</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #0a0f1c;
-            color: #eef4ff;
-            padding: 20px;
-        }
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-        /* Tabs */
-        .tabs {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 24px;
-            border-bottom: 2px solid #2d3748;
-            padding-bottom: 8px;
-        }
-        .tab-btn {
-            background: #1f2937;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 40px;
-            font-size: 1rem;
-            font-weight: bold;
-            cursor: pointer;
-            color: #cbd5e1;
-            transition: 0.2s;
-        }
-        .tab-btn.active {
-            background: #3b82f6;
-            color: white;
-            box-shadow: 0 2px 8px rgba(59,130,246,0.3);
-        }
-        .tab-content {
-            display: none;
-        }
-        .tab-content.active {
-            display: block;
-        }
-        /* Estilos comunes */
-        .header {
-            background: #111827;
-            border-radius: 28px;
-            padding: 18px 24px;
-            margin-bottom: 24px;
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: space-between;
-            gap: 16px;
-        }
-        .logo h1 { font-size: 1.7rem; background: linear-gradient(135deg, #60a5fa, #a855f7); background-clip: text; -webkit-background-clip: text; color: transparent; }
-        .user-area {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            background: #1f2937;
-            padding: 8px 16px;
-            border-radius: 60px;
-        }
-        .user-area input {
-            background: #0f172a;
-            border: 1px solid #334155;
-            color: white;
-            padding: 10px 16px;
-            border-radius: 40px;
-            font-size: 1rem;
-            outline: none;
-            width: 180px;
-        }
-        .user-area button {
-            background: #3b82f6;
-            border: none;
-            padding: 8px 20px;
-            border-radius: 40px;
-            font-weight: bold;
-            cursor: pointer;
-            color: white;
-        }
-        .status-badge {
-            background: #10b98120;
-            border-left: 4px solid #10b981;
-            padding: 8px 14px;
-            border-radius: 40px;
-            font-size: 0.85rem;
-        }
-        .device-list {
-            list-style: none;
-            max-height: 400px;
-            overflow-y: auto;
-        }
-        .device-item {
-            background: #1e293b;
-            margin: 12px 0;
-            padding: 14px 16px;
-            border-radius: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .device-phone { font-weight: bold; font-size: 1.1rem; }
-        .call-btn {
-            background: #10b981;
-            border: none;
-            padding: 8px 18px;
-            border-radius: 40px;
-            font-weight: bold;
-            cursor: pointer;
-            color: white;
-        }
-        .video-container, .audio-container {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-            margin-top: 20px;
-        }
-        .video-box, .audio-box {
-            background: #00000066;
-            border-radius: 24px;
-            overflow: hidden;
-            text-align: center;
-            flex: 1;
-            min-width: 250px;
-        }
-        video {
-            width: 100%;
-            background: #0a0a0a;
-            transform: scaleX(-1);
-            max-height: 280px;
-            object-fit: cover;
-        }
-        .chat-area {
-            background: #1e293b;
-            border-radius: 24px;
-            padding: 16px;
-            margin-top: 20px;
-        }
-        .chat-messages {
-            height: 300px;
-            overflow-y: auto;
-            background: #0f172a;
-            border-radius: 16px;
-            padding: 12px;
-            margin-bottom: 12px;
-        }
-        .message {
-            margin-bottom: 8px;
-            padding: 6px 12px;
-            border-radius: 20px;
-            max-width: 80%;
-        }
-        .message.sent {
-            background: #3b82f6;
-            margin-left: auto;
-            text-align: right;
-        }
-        .message.received {
-            background: #334155;
-        }
-        .chat-input {
-            display: flex;
-            gap: 12px;
-        }
-        .chat-input input {
-            flex: 1;
-            background: #0f172a;
-            border: 1px solid #334155;
-            color: white;
-            padding: 12px;
-            border-radius: 40px;
-        }
-        .chat-input button {
-            background: #3b82f6;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 40px;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        .file-input {
-            margin-top: 12px;
-        }
-        .control-buttons {
-            margin-top: 20px;
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-        .action-btn {
-            background: #ef4444;
-            border: none;
-            padding: 12px 28px;
-            border-radius: 60px;
-            font-weight: bold;
-            cursor: pointer;
-            color: white;
-        }
-        .action-btn.warning { background: #eab308; color: black; }
-        .participants-panel {
-            background: #1e293b;
-            border-radius: 20px;
-            padding: 16px;
-            margin-bottom: 20px;
-        }
-        .participants-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 12px;
-        }
-        .participant-badge {
-            background: #2d3748;
-            padding: 6px 12px;
-            border-radius: 40px;
-            font-size: 0.8rem;
-        }
-        .video-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-        .video-card {
-            background: #00000066;
-            border-radius: 24px;
-            overflow: hidden;
-            position: relative;
-        }
-        .video-card video {
-            width: 100%;
-            transform: scaleX(-1);
-            max-height: 280px;
-            object-fit: cover;
-        }
-        .video-label {
-            position: absolute;
-            bottom: 10px;
-            left: 10px;
-            background: rgba(0,0,0,0.7);
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-        }
-        .debug-panel {
-            margin-top: 12px;
-            background: #1e1e2f;
-            padding: 8px;
-            border-radius: 12px;
-            font-size: 0.7rem;
-            max-height: 150px;
-            overflow-y: auto;
-            font-family: monospace;
-        }
-        .hidden { display: none; }
-        @media (max-width: 760px) {
-            .header { flex-direction: column; align-items: stretch; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MyOW PWA</title>
+
+<link rel="manifest" href="manifest.json">
+
+<style>
+body { font-family: sans-serif; background:#0a0f1c; color:white; text-align:center; }
+input,button { padding:10px; margin:5px; border-radius:20px; border:none; }
+button { background:#3b82f6; color:white; font-weight:bold; }
+video { width:45%; margin:5px; border-radius:12px; }
+#incoming { background:#f97316; padding:10px; border-radius:20px; display:none; }
+</style>
 </head>
+
 <body>
-<div class="container">
-    <div class="header">
-        <div class="logo"><h1>🎛️ MyOW - Multimodo</h1></div>
-        <div class="user-area">
-            <input type="tel" id="phoneInput" placeholder="+34 600 000 000" autocomplete="off">
-            <button id="setPhoneBtn">✅ Registrar número</button>
-        </div>
-        <div class="status-badge" id="connectionStatus">⚪ Desconectado</div>
-    </div>
 
-    <!-- Pestañas -->
-    <div class="tabs">
-        <button class="tab-btn active" data-tab="video">📹 Videollamada</button>
-        <button class="tab-btn" data-tab="audio">🎙️ Llamada de voz</button>
-        <button class="tab-btn" data-tab="chat">💬 Texto y archivos</button>
-        <button class="tab-btn" data-tab="group">👥 Llamada grupal</button>
-    </div>
+<h2>📞 MyOW WhatsApp Style</h2>
 
-    <!-- Contenido de cada pestaña -->
-    <div id="videoTab" class="tab-content active">
-        <div class="devices-panel">
-            <div class="panel-title">📱 Dispositivos activos</div>
-            <ul id="videoDeviceList" class="device-list"><li>🔍 Esperando...</li></ul>
-        </div>
-        <div class="video-container">
-            <div class="video-box">
-                <video id="videoLocal" autoplay muted playsinline></video>
-                <div class="video-label">📹 Tú</div>
-            </div>
-            <div class="video-box">
-                <video id="videoRemote" autoplay playsinline></video>
-                <div class="video-label">👤 Remoto</div>
-            </div>
-        </div>
-        <div class="control-buttons">
-            <button id="videoHangup" class="action-btn" disabled>📴 Colgar</button>
-            <button id="videoMicToggle" class="action-btn warning">🎤 Micrófono ON</button>
-            <button id="videoCamToggle" class="action-btn warning">📷 Cámara ON</button>
-        </div>
-        <div id="videoStatus" class="debug-panel"></div>
-    </div>
+<input id="myNumber" placeholder="Tu número">
+<button onclick="register()">Registrar</button>
 
-    <div id="audioTab" class="tab-content">
-        <div class="devices-panel">
-            <div class="panel-title">📱 Dispositivos activos</div>
-            <ul id="audioDeviceList" class="device-list"><li>🔍 Esperando...</li></ul>
-        </div>
-        <div class="audio-container">
-            <div class="audio-box">
-                <div class="video-label">🎤 Tu micrófono</div>
-            </div>
-            <div class="audio-box">
-                <div class="video-label">🔊 Audio remoto</div>
-            </div>
-        </div>
-        <div class="control-buttons">
-            <button id="audioHangup" class="action-btn" disabled>📴 Colgar</button>
-            <button id="audioMicToggle" class="action-btn warning">🎤 Micrófono ON</button>
-        </div>
-        <div id="audioStatus" class="debug-panel"></div>
-    </div>
+<br><br>
 
-    <div id="chatTab" class="tab-content">
-        <div class="devices-panel">
-            <div class="panel-title">📱 Dispositivos activos</div>
-            <ul id="chatDeviceList" class="device-list"><li>🔍 Esperando...</li></ul>
-        </div>
-        <div class="chat-area">
-            <div class="chat-messages" id="chatMessages"></div>
-            <div class="chat-input">
-                <input type="text" id="chatInput" placeholder="Escribe un mensaje..." disabled>
-                <button id="chatSendBtn" disabled>📤 Enviar</button>
-            </div>
-            <div class="file-input">
-                <input type="file" id="fileInput" disabled>
-                <button id="fileSendBtn" disabled>📎 Enviar archivo</button>
-            </div>
-        </div>
-        <div class="control-buttons">
-            <button id="chatHangup" class="action-btn" disabled>🔌 Desconectar</button>
-        </div>
-        <div id="chatStatus" class="debug-panel"></div>
-    </div>
+<input id="callNumber" placeholder="Número a llamar">
+<button onclick="call()">📞 Llamar</button>
 
-    <div id="groupTab" class="tab-content">
-        <div class="room-section">
-            <div class="room-controls" style="display: flex; gap: 12px; margin-bottom: 20px;">
-                <input type="text" id="groupRoomId" placeholder="Código de sala">
-                <button id="groupCreateBtn">➕ Crear sala</button>
-                <button id="groupJoinBtn">🚪 Unirse a sala</button>
-                <button id="groupLeaveBtn" style="background:#dc2626;" disabled>🚪 Salir</button>
-            </div>
-            <div id="groupParticipantsPanel" class="participants-panel hidden">
-                <div>👥 Participantes en sala:</div>
-                <div id="groupParticipantsList" class="participants-list"></div>
-            </div>
-        </div>
-        <div id="groupVideoGrid" class="video-grid"></div>
-        <div class="control-buttons">
-            <button id="groupMicToggle" class="action-btn warning">🎤 Micrófono ON</button>
-            <button id="groupCamToggle" class="action-btn warning">📷 Cámara ON</button>
-        </div>
-        <div id="groupStatus" class="debug-panel"></div>
-    </div>
-</div>
+<div id="incoming"></div>
 
-<script type="importmap">
-    {
-        "imports": {
-            "firebase/app": "https://www.gstatic.com/firebasejs/10.7.2/firebase-app.js",
-            "firebase/database": "https://www.gstatic.com/firebasejs/10.7.2/firebase-database.js"
-        }
-    }
-</script>
+<br>
+
+<video id="local" autoplay muted playsinline></video>
+<video id="remote" playsinline></video>
+
+<br>
+<button onclick="playRemote()">▶️ Play</button>
+<button onclick="hangup()">❌ Colgar</button>
 
 <script type="module">
-    import { initializeApp } from "firebase/app";
-    import { getDatabase, ref, set, onValue, push, remove, onDisconnect } from "firebase/database";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-app.js";
+import { getDatabase, ref, set, onValue, push, remove, onDisconnect } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-database.js";
 
-    // ---------- CONFIGURACIÓN GLOBAL ----------
-    const firebaseConfig = {
-        apiKey: "AIzaSyD29ExpZwaXQGV059fQGZ-3i0GMzk353o0",
-        authDomain: "myow-cdb46.firebaseapp.com",
-        databaseURL: "https://myow-cdb46-default-rtdb.firebaseio.com",
-        projectId: "myow-cdb46",
-        storageBucket: "myow-cdb46.firebasestorage.app",
-        messagingSenderId: "651159312592",
-        appId: "1:651159312592:web:98404f13e075fdce4d26d5",
-        measurementId: "G-W53ZFMPW7X"
-    };
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+const app = initializeApp({
+  apiKey: "AIzaSy...",
+  databaseURL: "https://myow-cdb46-default-rtdb.firebaseio.com"
+});
+const db = getDatabase(app);
 
-    // TURN activo
-    const turnConfig = {
-        urls: [
-            "turn:global.turn.metered.live:3478?transport=udp",
-            "turn:global.turn.metered.live:3478?transport=tcp",
-            "turn:global.turn.metered.live:443?transport=tcp"
-        ],
-        username: "6add749aa39bded58851f0d5",
-        credential: "TF2Z0iD5X45aIWpX"
-    };
-    const iceServers = [
-        { urls: "stun:stun.l.google.com:19302" },
-        { urls: "stun:stun1.l.google.com:19302" },
-        turnConfig
-    ];
+let myId = localStorage.getItem("id") || crypto.randomUUID();
+localStorage.setItem("id", myId);
 
-    // Variables globales compartidas
-    let myClientId = null;
-    let myPhoneNumber = "";
-    let currentTab = "video";
-    let activeCall = null;   // Objeto con la lógica activa del tab actual
+let myPhone = "";
+let pc, localStream, callId;
 
-    // Función de log genérica (se redirige según tab activo)
-    function log(msg, tab = currentTab) {
-        const statusDiv = document.getElementById(`${tab}Status`);
-        if (statusDiv) {
-            const time = new Date().toLocaleTimeString();
-            statusDiv.innerHTML += `<div>${time}: ${msg}</div>`;
-            statusDiv.scrollTop = statusDiv.scrollHeight;
-        }
-        console.log(msg);
+const iceServers = [
+ { urls: "stun:stun.l.google.com:19302" },
+ {
+  urls: [
+   "turn:global.turn.metered.live:3478",
+   "turn:global.turn.metered.live:443"
+  ],
+  username: "6add749aa39bded58851f0d5",
+  credential: "TF2Z0iD5X45aIWpX"
+ }
+];
+
+function log(t){console.log(t)}
+
+// ---------- REGISTRO ----------
+window.register = async () => {
+  myPhone = document.getElementById("myNumber").value;
+
+  await set(ref(db, "users/"+myPhone), {
+    id: myId
+  });
+
+  onDisconnect(ref(db, "users/"+myPhone)).remove();
+
+  listenIncoming();
+  alert("Registrado ✅");
+};
+
+// ---------- STREAM ----------
+async function getStream(){
+  if(localStream) return localStream;
+  localStream = await navigator.mediaDevices.getUserMedia({video:true,audio:true});
+  document.getElementById("local").srcObject = localStream;
+}
+
+// ---------- PC ----------
+function createPC(){
+  pc = new RTCPeerConnection({iceServers});
+
+  localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
+
+  pc.ontrack = e=>{
+    document.getElementById("remote").srcObject = e.streams[0];
+  };
+
+  pc.onconnectionstatechange = ()=>{
+    log(pc.connectionState);
+  };
+}
+
+// ---------- LLAMAR ----------
+window.call = async () => {
+  let num = document.getElementById("callNumber").value;
+
+  const snap = await new Promise(res=>{
+    onValue(ref(db,"users/"+num), s=>res(s.val()),{onlyOnce:true});
+  });
+
+  if(!snap){ alert("No existe"); return; }
+
+  await getStream();
+  createPC();
+
+  let offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+
+  await waitICE();
+
+  callId = push(ref(db,"calls")).key;
+
+  await set(ref(db,"calls/"+callId),{
+    to:num,
+    from:myPhone,
+    offer:pc.localDescription.sdp
+  });
+
+  onValue(ref(db,"calls/"+callId+"/answer"), async s=>{
+    if(s.val()){
+      await pc.setRemoteDescription({
+        type:"answer",
+        sdp:s.val()
+      });
     }
+  });
+};
 
-    function generateUUID() {
-        return 'id-' + Date.now() + '-' + Math.random().toString(36).substr(2, 8);
+// ---------- RECIBIR ----------
+function listenIncoming(){
+  onValue(ref(db,"calls"), snap=>{
+    let data = snap.val();
+    if(!data) return;
+
+    for(let id in data){
+      let c = data[id];
+      if(c.to===myPhone){
+        showIncoming(id,c);
+        break;
+      }
     }
+  });
+}
 
-    async function updatePresence() {
-        if (!myClientId || !myPhoneNumber) return;
-        const presenceRef = ref(db, `presence/${myClientId}`);
-        await set(presenceRef, {
-            phoneNumber: myPhoneNumber,
-            clientId: myClientId,
-            timestamp: Date.now(),
-            online: true
-        });
-        onDisconnect(presenceRef).remove();
-        document.getElementById('connectionStatus').innerHTML = `✅ Conectado como ${myPhoneNumber}`;
-        log(`✅ Presencia actualizada: ${myPhoneNumber}`);
-    }
+function showIncoming(id,call){
+  let div = document.getElementById("incoming");
+  div.style.display="block";
+  div.innerHTML = `
+    📞 ${call.from}
+    <button onclick="accept('${id}')">Aceptar</button>
+    <button onclick="reject('${id}')">Rechazar</button>
+  `;
+}
 
-    // ---------- VIDEO CALL (punto a punto) ----------
-    class VideoCall {
-        constructor() {
-            this.pc = null;
-            this.localStream = null;
-            this.activeCallId = null;
-            this.isCaller = false;
-            this.callListener = null;
-            this.initDOM();
-        }
-        initDOM() {
-            this.deviceList = document.getElementById('videoDeviceList');
-            this.localVideo = document.getElementById('videoLocal');
-            this.remoteVideo = document.getElementById('videoRemote');
-            this.hangupBtn = document.getElementById('videoHangup');
-            this.micBtn = document.getElementById('videoMicToggle');
-            this.camBtn = document.getElementById('videoCamToggle');
-            this.hangupBtn.onclick = () => this.endCall();
-            this.micBtn.onclick = () => this.toggleMic();
-            this.camBtn.onclick = () => this.toggleCam();
-            this.listenDevices();
-            this.listenIncomingCalls();
-        }
-        async getLocalStream() {
-            if (this.localStream) return this.localStream;
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                this.localStream = stream;
-                this.localVideo.srcObject = stream;
-                this.updateButtons();
-                log("✅ Stream local obtenido", "video");
-                return stream;
-            } catch (err) {
-                log(`❌ Error obteniendo medios: ${err.message}`, "video");
-                throw err;
-            }
-        }
-        updateButtons() {
-            if (!this.localStream) return;
-            const audio = this.localStream.getAudioTracks()[0];
-            const video = this.localStream.getVideoTracks()[0];
-            this.micBtn.innerHTML = audio?.enabled ? "🎤 Micrófono ON" : "🎤 Micrófono OFF";
-            this.camBtn.innerHTML = video?.enabled ? "📷 Cámara ON" : "📷 Cámara OFF";
-        }
-        toggleMic() {
-            if (this.localStream) {
-                const audio = this.localStream.getAudioTracks()[0];
-                if (audio) {
-                    audio.enabled = !audio.enabled;
-                    this.micBtn.innerHTML = audio.enabled ? "🎤 Micrófono ON" : "🎤 Micrófono OFF";
-                    log(`Micrófono ${audio.enabled ? 'activado' : 'silenciado'}`, "video");
-                }
-            }
-        }
-        toggleCam() {
-            if (this.localStream) {
-                const video = this.localStream.getVideoTracks()[0];
-                if (video) {
-                    video.enabled = !video.enabled;
-                    this.camBtn.innerHTML = video.enabled ? "📷 Cámara ON" : "📷 Cámara OFF";
-                    log(`Cámara ${video.enabled ? 'activada' : 'apagada'}`, "video");
-                }
-            }
-        }
-        waitForIceGathering(pc) {
-            return new Promise(resolve => {
-                if (pc.iceGatheringState === 'complete') resolve();
-                else pc.onicegatheringstatechange = () => {
-                    if (pc.iceGatheringState === 'complete') resolve();
-                };
-            });
-        }
-        createPeerConnection() {
-            if (this.pc) this.pc.close();
-            const pc = new RTCPeerConnection({ iceServers });
-            if (this.localStream) {
-                this.localStream.getTracks().forEach(t => pc.addTrack(t, this.localStream));
-            }
-            pc.ontrack = (event) => {
-                if (event.streams && event.streams[0]) {
-                    this.remoteVideo.srcObject = event.streams[0];
-                } else {
-                    if (!this.remoteVideo.srcObject) this.remoteVideo.srcObject = new MediaStream();
-                    this.remoteVideo.srcObject.addTrack(event.track);
-                }
-                log("📺 Track recibido", "video");
-            };
-            pc.oniceconnectionstatechange = () => {
-                log(`ICE state: ${pc.iceConnectionState}`, "video");
-                if (pc.iceConnectionState === 'failed') this.endCall();
-            };
-            return pc;
-        }
-        async initiateCall(calleeId, calleePhone) {
-            try {
-                await this.getLocalStream();
-                this.pc = this.createPeerConnection();
-                const offer = await this.pc.createOffer();
-                await this.pc.setLocalDescription(offer);
-                await this.waitForIceGathering(this.pc);
-                const callId = push(ref(db, 'calls')).key;
-                this.activeCallId = callId;
-                this.isCaller = true;
-                await set(ref(db, `calls/${callId}`), {
-                    callerId: myClientId, calleeId, callerPhone: myPhoneNumber, calleePhone,
-                    offer: this.pc.localDescription.sdp, status: "calling", createdAt: Date.now()
-                });
-                this.hangupBtn.disabled = false;
-                log(`📞 Llamando a ${calleePhone}`, "video");
-                this.callListener = onValue(ref(db, `calls/${callId}/answer`), async (snap) => {
-                    const answer = snap.val();
-                    if (answer && this.pc && this.pc.remoteDescription === null) {
-                        await this.pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: answer }));
-                        log("✅ Respuesta recibida", "video");
-                    }
-                });
-                onValue(ref(db, `calls/${callId}`), (snap) => { if (!snap.exists()) this.endCall(); });
-            } catch (err) { log(`Error: ${err.message}`, "video"); }
-        }
-        async acceptCall(callId, callData) {
-            try {
-                await this.getLocalStream();
-                this.pc = this.createPeerConnection();
-                await this.pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: callData.offer }));
-                const answer = await this.pc.createAnswer();
-                await this.pc.setLocalDescription(answer);
-                await this.waitForIceGathering(this.pc);
-                await set(ref(db, `calls/${callId}/answer`), this.pc.localDescription.sdp);
-                await set(ref(db, `calls/${callId}/status`), "accepted");
-                this.activeCallId = callId;
-                this.isCaller = false;
-                this.hangupBtn.disabled = false;
-                log("✅ Llamada aceptada", "video");
-                onValue(ref(db, `calls/${callId}`), (snap) => { if (!snap.exists()) this.endCall(); });
-            } catch (err) { log(`Error: ${err.message}`, "video"); }
-        }
-        async endCall() {
-            if (this.activeCallId) {
-                await remove(ref(db, `calls/${this.activeCallId}`));
-                if (this.pc) this.pc.close();
-                if (this.callListener) this.callListener();
-                this.activeCallId = null;
-                this.pc = null;
-                this.remoteVideo.srcObject = null;
-                this.hangupBtn.disabled = true;
-                log("🔴 Llamada finalizada", "video");
-            }
-        }
-        listenDevices() {
-            onValue(ref(db, 'presence'), (snap) => {
-                const data = snap.val();
-                if (!data) { this.deviceList.innerHTML = '<li>📡 No hay dispositivos</li>'; return; }
-                const devices = [];
-                for (let [id, info] of Object.entries(data)) {
-                    if (id === myClientId) continue;
-                    devices.push({ clientId: id, phoneNumber: info.phoneNumber || "???" });
-                }
-                if (devices.length === 0) { this.deviceList.innerHTML = '<li>👤 No hay otros dispositivos</li>'; return; }
-                this.deviceList.innerHTML = devices.map(dev => `
-                    <li class="device-item">
-                        <div><span class="device-phone">📞 ${dev.phoneNumber}</span><span style="font-size:0.7rem;">🆔 ${dev.clientId.slice(0,8)}...</span></div>
-                        <button class="call-btn" data-clientid="${dev.clientId}" data-phone="${dev.phoneNumber}">🔊 Llamar</button>
-                    </li>
-                `).join('');
-                this.deviceList.querySelectorAll('.call-btn').forEach(btn => {
-                    btn.onclick = () => this.initiateCall(btn.dataset.clientid, btn.dataset.phone);
-                });
-            });
-        }
-        listenIncomingCalls() {
-            onValue(ref(db, 'calls'), (snap) => {
-                if (!this.activeCallId && !this.isCaller && snap.val()) {
-                    for (let [id, call] of Object.entries(snap.val())) {
-                        if (call.calleeId === myClientId && call.status === "calling") {
-                            if (confirm(`Llamada entrante de ${call.callerPhone}. ¿Aceptar?`)) {
-                                this.acceptCall(id, call);
-                            } else {
-                                remove(ref(db, `calls/${id}`));
-                            }
-                            break;
-                        }
-                    }
-                }
-            });
-        }
-        async reset() {
-            await this.endCall();
-            if (this.localStream) {
-                this.localStream.getTracks().forEach(t => t.stop());
-                this.localStream = null;
-                this.localVideo.srcObject = null;
-            }
-        }
-    }
+// ---------- ACEPTAR ----------
+window.accept = async (id)=>{
+  let call = (await new Promise(res=>{
+    onValue(ref(db,"calls/"+id), s=>res(s.val()),{onlyOnce:true});
+  }));
 
-    // ---------- AUDIO CALL (solo audio) ----------
-    class AudioCall {
-        constructor() {
-            this.pc = null;
-            this.localStream = null;
-            this.activeCallId = null;
-            this.isCaller = false;
-            this.callListener = null;
-            this.initDOM();
-        }
-        initDOM() {
-            this.deviceList = document.getElementById('audioDeviceList');
-            this.hangupBtn = document.getElementById('audioHangup');
-            this.micBtn = document.getElementById('audioMicToggle');
-            this.hangupBtn.onclick = () => this.endCall();
-            this.micBtn.onclick = () => this.toggleMic();
-            this.listenDevices();
-            this.listenIncomingCalls();
-        }
-        async getLocalStream() {
-            if (this.localStream) return this.localStream;
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                this.localStream = stream;
-                this.updateButtons();
-                log("✅ Stream de audio obtenido", "audio");
-                return stream;
-            } catch (err) {
-                log(`❌ Error obteniendo audio: ${err.message}`, "audio");
-                throw err;
-            }
-        }
-        updateButtons() {
-            if (!this.localStream) return;
-            const audio = this.localStream.getAudioTracks()[0];
-            this.micBtn.innerHTML = audio?.enabled ? "🎤 Micrófono ON" : "🎤 Micrófono OFF";
-        }
-        toggleMic() {
-            if (this.localStream) {
-                const audio = this.localStream.getAudioTracks()[0];
-                if (audio) {
-                    audio.enabled = !audio.enabled;
-                    this.micBtn.innerHTML = audio.enabled ? "🎤 Micrófono ON" : "🎤 Micrófono OFF";
-                    log(`Micrófono ${audio.enabled ? 'activado' : 'silenciado'}`, "audio");
-                }
-            }
-        }
-        waitForIceGathering(pc) {
-            return new Promise(resolve => {
-                if (pc.iceGatheringState === 'complete') resolve();
-                else pc.onicegatheringstatechange = () => {
-                    if (pc.iceGatheringState === 'complete') resolve();
-                };
-            });
-        }
-        createPeerConnection() {
-            if (this.pc) this.pc.close();
-            const pc = new RTCPeerConnection({ iceServers });
-            if (this.localStream) {
-                this.localStream.getTracks().forEach(t => pc.addTrack(t, this.localStream));
-            }
-            pc.ontrack = (event) => {
-                log("Track de audio recibido", "audio");
-                // No hay elemento de video para audio, solo se reproduce
-            };
-            pc.oniceconnectionstatechange = () => {
-                log(`ICE state: ${pc.iceConnectionState}`, "audio");
-                if (pc.iceConnectionState === 'failed') this.endCall();
-            };
-            return pc;
-        }
-        async initiateCall(calleeId, calleePhone) {
-            try {
-                await this.getLocalStream();
-                this.pc = this.createPeerConnection();
-                const offer = await this.pc.createOffer();
-                await this.pc.setLocalDescription(offer);
-                await this.waitForIceGathering(this.pc);
-                const callId = push(ref(db, 'audioCalls')).key;
-                this.activeCallId = callId;
-                this.isCaller = true;
-                await set(ref(db, `audioCalls/${callId}`), {
-                    callerId: myClientId, calleeId, callerPhone: myPhoneNumber, calleePhone,
-                    offer: this.pc.localDescription.sdp, status: "calling", createdAt: Date.now()
-                });
-                this.hangupBtn.disabled = false;
-                log(`📞 Llamando a ${calleePhone}`, "audio");
-                this.callListener = onValue(ref(db, `audioCalls/${callId}/answer`), async (snap) => {
-                    const answer = snap.val();
-                    if (answer && this.pc && this.pc.remoteDescription === null) {
-                        await this.pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: answer }));
-                        log("✅ Respuesta recibida", "audio");
-                    }
-                });
-                onValue(ref(db, `audioCalls/${callId}`), (snap) => { if (!snap.exists()) this.endCall(); });
-            } catch (err) { log(`Error: ${err.message}`, "audio"); }
-        }
-        async acceptCall(callId, callData) {
-            try {
-                await this.getLocalStream();
-                this.pc = this.createPeerConnection();
-                await this.pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: callData.offer }));
-                const answer = await this.pc.createAnswer();
-                await this.pc.setLocalDescription(answer);
-                await this.waitForIceGathering(this.pc);
-                await set(ref(db, `audioCalls/${callId}/answer`), this.pc.localDescription.sdp);
-                await set(ref(db, `audioCalls/${callId}/status`), "accepted");
-                this.activeCallId = callId;
-                this.isCaller = false;
-                this.hangupBtn.disabled = false;
-                log("✅ Llamada aceptada", "audio");
-                onValue(ref(db, `audioCalls/${callId}`), (snap) => { if (!snap.exists()) this.endCall(); });
-            } catch (err) { log(`Error: ${err.message}`, "audio"); }
-        }
-        async endCall() {
-            if (this.activeCallId) {
-                await remove(ref(db, `audioCalls/${this.activeCallId}`));
-                if (this.pc) this.pc.close();
-                if (this.callListener) this.callListener();
-                this.activeCallId = null;
-                this.pc = null;
-                this.hangupBtn.disabled = true;
-                log("🔴 Llamada finalizada", "audio");
-            }
-        }
-        listenDevices() {
-            onValue(ref(db, 'presence'), (snap) => {
-                const data = snap.val();
-                if (!data) { this.deviceList.innerHTML = '<li>📡 No hay dispositivos</li>'; return; }
-                const devices = [];
-                for (let [id, info] of Object.entries(data)) {
-                    if (id === myClientId) continue;
-                    devices.push({ clientId: id, phoneNumber: info.phoneNumber || "???" });
-                }
-                if (devices.length === 0) { this.deviceList.innerHTML = '<li>👤 No hay otros dispositivos</li>'; return; }
-                this.deviceList.innerHTML = devices.map(dev => `
-                    <li class="device-item">
-                        <div><span class="device-phone">📞 ${dev.phoneNumber}</span><span style="font-size:0.7rem;">🆔 ${dev.clientId.slice(0,8)}...</span></div>
-                        <button class="call-btn" data-clientid="${dev.clientId}" data-phone="${dev.phoneNumber}">🔊 Llamar</button>
-                    </li>
-                `).join('');
-                this.deviceList.querySelectorAll('.call-btn').forEach(btn => {
-                    btn.onclick = () => this.initiateCall(btn.dataset.clientid, btn.dataset.phone);
-                });
-            });
-        }
-        listenIncomingCalls() {
-            onValue(ref(db, 'audioCalls'), (snap) => {
-                if (!this.activeCallId && !this.isCaller && snap.val()) {
-                    for (let [id, call] of Object.entries(snap.val())) {
-                        if (call.calleeId === myClientId && call.status === "calling") {
-                            if (confirm(`Llamada de voz entrante de ${call.callerPhone}. ¿Aceptar?`)) {
-                                this.acceptCall(id, call);
-                            } else {
-                                remove(ref(db, `audioCalls/${id}`));
-                            }
-                            break;
-                        }
-                    }
-                }
-            });
-        }
-        async reset() {
-            await this.endCall();
-            if (this.localStream) {
-                this.localStream.getTracks().forEach(t => t.stop());
-                this.localStream = null;
-            }
-        }
-    }
+  await getStream();
+  createPC();
 
-    // ---------- CHAT Y ARCHIVOS (DataChannel) ----------
-    class ChatCall {
-        constructor() {
-            this.pc = null;
-            this.dataChannel = null;
-            this.activeCallId = null;
-            this.isCaller = false;
-            this.callListener = null;
-            this.initDOM();
-        }
-        initDOM() {
-            this.deviceList = document.getElementById('chatDeviceList');
-            this.messagesDiv = document.getElementById('chatMessages');
-            this.chatInput = document.getElementById('chatInput');
-            this.sendBtn = document.getElementById('chatSendBtn');
-            this.fileInput = document.getElementById('fileInput');
-            this.fileSendBtn = document.getElementById('fileSendBtn');
-            this.hangupBtn = document.getElementById('chatHangup');
-            this.hangupBtn.onclick = () => this.endCall();
-            this.sendBtn.onclick = () => this.sendMessage();
-            this.fileSendBtn.onclick = () => this.sendFile();
-            this.listenDevices();
-            this.listenIncomingCalls();
-        }
-        addMessage(text, isSent) {
-            const div = document.createElement('div');
-            div.className = `message ${isSent ? 'sent' : 'received'}`;
-            div.innerText = text;
-            this.messagesDiv.appendChild(div);
-            this.messagesDiv.scrollTop = this.messagesDiv.scrollHeight;
-        }
-        sendMessage() {
-            const msg = this.chatInput.value.trim();
-            if (msg && this.dataChannel && this.dataChannel.readyState === 'open') {
-                this.dataChannel.send(JSON.stringify({ type: 'text', data: msg }));
-                this.addMessage(`Tú: ${msg}`, true);
-                this.chatInput.value = '';
-            } else {
-                log("Canal no disponible", "chat");
-            }
-        }
-        async sendFile() {
-            const file = this.fileInput.files[0];
-            if (!file || !this.dataChannel || this.dataChannel.readyState !== 'open') return;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const arrayBuffer = e.target.result;
-                const chunkSize = 16384; // 16KB
-                const chunks = Math.ceil(arrayBuffer.byteLength / chunkSize);
-                this.dataChannel.send(JSON.stringify({ type: 'file_start', name: file.name, size: file.size, chunks }));
-                for (let i = 0; i < chunks; i++) {
-                    const chunk = arrayBuffer.slice(i * chunkSize, (i + 1) * chunkSize);
-                    this.dataChannel.send(JSON.stringify({ type: 'file_chunk', index: i, data: Array.from(new Uint8Array(chunk)) }));
-                }
-                this.addMessage(`📎 Enviado: ${file.name} (${(file.size/1024).toFixed(2)} KB)`, true);
-                this.fileInput.value = '';
-            };
-            reader.readAsArrayBuffer(file);
-        }
-        setupDataChannel() {
-            this.dataChannel.onopen = () => {
-                log("Canal de datos abierto", "chat");
-                this.chatInput.disabled = false;
-                this.sendBtn.disabled = false;
-                this.fileInput.disabled = false;
-                this.fileSendBtn.disabled = false;
-            };
-            this.dataChannel.onclose = () => {
-                log("Canal cerrado", "chat");
-                this.chatInput.disabled = true;
-                this.sendBtn.disabled = true;
-                this.fileInput.disabled = true;
-                this.fileSendBtn.disabled = true;
-            };
-            this.dataChannel.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                if (data.type === 'text') {
-                    this.addMessage(`Remoto: ${data.data}`, false);
-                } else if (data.type === 'file_start') {
-                    this.receivingFile = { name: data.name, size: data.size, chunks: data.chunks, received: 0, buffer: [] };
-                } else if (data.type === 'file_chunk') {
-                    if (this.receivingFile) {
-                        this.receivingFile.buffer[data.index] = new Uint8Array(data.data);
-                        this.receivingFile.received++;
-                        if (this.receivingFile.received === this.receivingFile.chunks) {
-                            const full = new Uint8Array(this.receivingFile.size);
-                            let offset = 0;
-                            for (let chunk of this.receivingFile.buffer) {
-                                full.set(chunk, offset);
-                                offset += chunk.length;
-                            }
-                            const blob = new Blob([full]);
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = this.receivingFile.name;
-                            a.click();
-                            URL.revokeObjectURL(url);
-                            this.addMessage(`📎 Recibido: ${this.receivingFile.name}`, false);
-                            this.receivingFile = null;
-                        }
-                    }
-                }
-            };
-        }
-        waitForIceGathering(pc) {
-            return new Promise(resolve => {
-                if (pc.iceGatheringState === 'complete') resolve();
-                else pc.onicegatheringstatechange = () => {
-                    if (pc.iceGatheringState === 'complete') resolve();
-                };
-            });
-        }
-        createPeerConnection() {
-            if (this.pc) this.pc.close();
-            const pc = new RTCPeerConnection({ iceServers });
-            if (this.isCaller) {
-                this.dataChannel = pc.createDataChannel('chat');
-                this.setupDataChannel();
-            }
-            pc.ondatachannel = (event) => {
-                this.dataChannel = event.channel;
-                this.setupDataChannel();
-            };
-            pc.oniceconnectionstatechange = () => {
-                log(`ICE state: ${pc.iceConnectionState}`, "chat");
-                if (pc.iceConnectionState === 'failed') this.endCall();
-            };
-            return pc;
-        }
-        async initiateCall(calleeId, calleePhone) {
-            try {
-                this.pc = this.createPeerConnection();
-                const offer = await this.pc.createOffer();
-                await this.pc.setLocalDescription(offer);
-                await this.waitForIceGathering(this.pc);
-                const callId = push(ref(db, 'chatCalls')).key;
-                this.activeCallId = callId;
-                this.isCaller = true;
-                await set(ref(db, `chatCalls/${callId}`), {
-                    callerId: myClientId, calleeId, callerPhone: myPhoneNumber, calleePhone,
-                    offer: this.pc.localDescription.sdp, status: "calling", createdAt: Date.now()
-                });
-                this.hangupBtn.disabled = false;
-                log(`📞 Conectando con ${calleePhone}...`, "chat");
-                this.callListener = onValue(ref(db, `chatCalls/${callId}/answer`), async (snap) => {
-                    const answer = snap.val();
-                    if (answer && this.pc && this.pc.remoteDescription === null) {
-                        await this.pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: answer }));
-                        log("✅ Canal establecido", "chat");
-                    }
-                });
-                onValue(ref(db, `chatCalls/${callId}`), (snap) => { if (!snap.exists()) this.endCall(); });
-            } catch (err) { log(`Error: ${err.message}`, "chat"); }
-        }
-        async acceptCall(callId, callData) {
-            try {
-                this.pc = this.createPeerConnection();
-                await this.pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: callData.offer }));
-                const answer = await this.pc.createAnswer();
-                await this.pc.setLocalDescription(answer);
-                await this.waitForIceGathering(this.pc);
-                await set(ref(db, `chatCalls/${callId}/answer`), this.pc.localDescription.sdp);
-                await set(ref(db, `chatCalls/${callId}/status`), "accepted");
-                this.activeCallId = callId;
-                this.isCaller = false;
-                this.hangupBtn.disabled = false;
-                log("✅ Conexión aceptada", "chat");
-                onValue(ref(db, `chatCalls/${callId}`), (snap) => { if (!snap.exists()) this.endCall(); });
-            } catch (err) { log(`Error: ${err.message}`, "chat"); }
-        }
-        async endCall() {
-            if (this.activeCallId) {
-                await remove(ref(db, `chatCalls/${this.activeCallId}`));
-                if (this.dataChannel) this.dataChannel.close();
-                if (this.pc) this.pc.close();
-                if (this.callListener) this.callListener();
-                this.activeCallId = null;
-                this.pc = null;
-                this.dataChannel = null;
-                this.hangupBtn.disabled = true;
-                this.chatInput.disabled = true;
-                this.sendBtn.disabled = true;
-                this.fileInput.disabled = true;
-                this.fileSendBtn.disabled = true;
-                log("🔴 Conexión finalizada", "chat");
-            }
-        }
-        listenDevices() {
-            onValue(ref(db, 'presence'), (snap) => {
-                const data = snap.val();
-                if (!data) { this.deviceList.innerHTML = '<li>📡 No hay dispositivos</li>'; return; }
-                const devices = [];
-                for (let [id, info] of Object.entries(data)) {
-                    if (id === myClientId) continue;
-                    devices.push({ clientId: id, phoneNumber: info.phoneNumber || "???" });
-                }
-                if (devices.length === 0) { this.deviceList.innerHTML = '<li>👤 No hay otros dispositivos</li>'; return; }
-                this.deviceList.innerHTML = devices.map(dev => `
-                    <li class="device-item">
-                        <div><span class="device-phone">📞 ${dev.phoneNumber}</span><span style="font-size:0.7rem;">🆔 ${dev.clientId.slice(0,8)}...</span></div>
-                        <button class="call-btn" data-clientid="${dev.clientId}" data-phone="${dev.phoneNumber}">🔊 Conectar</button>
-                    </li>
-                `).join('');
-                this.deviceList.querySelectorAll('.call-btn').forEach(btn => {
-                    btn.onclick = () => this.initiateCall(btn.dataset.clientid, btn.dataset.phone);
-                });
-            });
-        }
-        listenIncomingCalls() {
-            onValue(ref(db, 'chatCalls'), (snap) => {
-                if (!this.activeCallId && !this.isCaller && snap.val()) {
-                    for (let [id, call] of Object.entries(snap.val())) {
-                        if (call.calleeId === myClientId && call.status === "calling") {
-                            if (confirm(`Conexión entrante de ${call.callerPhone}. ¿Aceptar?`)) {
-                                this.acceptCall(id, call);
-                            } else {
-                                remove(ref(db, `chatCalls/${id}`));
-                            }
-                            break;
-                        }
-                    }
-                }
-            });
-        }
-        async reset() {
-            await this.endCall();
-        }
-    }
+  await pc.setRemoteDescription({
+    type:"offer",
+    sdp:call.offer
+  });
 
-    // ---------- GRUPAL (ya existente) ----------
-    class GroupCall {
-        constructor() {
-            this.localStream = null;
-            this.currentRoomId = null;
-            this.peers = new Map();
-            this.initDOM();
-        }
-        initDOM() {
-            this.roomIdInput = document.getElementById('groupRoomId');
-            this.createBtn = document.getElementById('groupCreateBtn');
-            this.joinBtn = document.getElementById('groupJoinBtn');
-            this.leaveBtn = document.getElementById('groupLeaveBtn');
-            this.participantsPanel = document.getElementById('groupParticipantsPanel');
-            this.participantsList = document.getElementById('groupParticipantsList');
-            this.videoGrid = document.getElementById('groupVideoGrid');
-            this.micBtn = document.getElementById('groupMicToggle');
-            this.camBtn = document.getElementById('groupCamToggle');
-            this.createBtn.onclick = () => this.createRoom();
-            this.joinBtn.onclick = () => this.joinRoom();
-            this.leaveBtn.onclick = () => this.leaveRoom();
-            this.micBtn.onclick = () => this.toggleMic();
-            this.camBtn.onclick = () => this.toggleCam();
-        }
-        async getLocalStream() {
-            if (this.localStream) return this.localStream;
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                this.localStream = stream;
-                this.addMyVideo();
-                this.updateButtons();
-                log("✅ Stream local obtenido", "group");
-                return stream;
-            } catch (err) {
-                log(`❌ Error obteniendo medios: ${err.message}`, "group");
-                throw err;
-            }
-        }
-        addMyVideo() {
-            const existing = document.getElementById('my-video-card-group');
-            if (existing) existing.remove();
-            const card = document.createElement('div');
-            card.className = 'video-card';
-            card.id = 'my-video-card-group';
-            const video = document.createElement('video');
-            video.autoplay = true;
-            video.muted = true;
-            video.playsInline = true;
-            video.srcObject = this.localStream;
-            const label = document.createElement('div');
-            label.className = 'video-label';
-            label.innerText = `📹 Yo (${myPhoneNumber})`;
-            card.appendChild(video);
-            card.appendChild(label);
-            this.videoGrid.appendChild(card);
-        }
-        addRemoteVideo(clientId, phoneNumber, stream) {
-            const existing = document.getElementById(`remote-${clientId}-group`);
-            if (existing) {
-                existing.querySelector('video').srcObject = stream;
-                return;
-            }
-            const card = document.createElement('div');
-            card.className = 'video-card';
-            card.id = `remote-${clientId}-group`;
-            const video = document.createElement('video');
-            video.autoplay = true;
-            video.playsInline = true;
-            video.srcObject = stream;
-            const label = document.createElement('div');
-            label.className = 'video-label';
-            label.innerText = `👤 ${phoneNumber}`;
-            card.appendChild(video);
-            card.appendChild(label);
-            this.videoGrid.appendChild(card);
-        }
-        removeRemoteVideo(clientId) {
-            const elem = document.getElementById(`remote-${clientId}-group`);
-            if (elem) elem.remove();
-        }
-        updateButtons() {
-            if (!this.localStream) return;
-            const audio = this.localStream.getAudioTracks()[0];
-            const video = this.localStream.getVideoTracks()[0];
-            this.micBtn.innerHTML = audio?.enabled ? "🎤 Micrófono ON" : "🎤 Micrófono OFF";
-            this.camBtn.innerHTML = video?.enabled ? "📷 Cámara ON" : "📷 Cámara OFF";
-        }
-        toggleMic() {
-            if (this.localStream) {
-                const audio = this.localStream.getAudioTracks()[0];
-                if (audio) {
-                    audio.enabled = !audio.enabled;
-                    this.micBtn.innerHTML = audio.enabled ? "🎤 Micrófono ON" : "🎤 Micrófono OFF";
-                    log(`Micrófono ${audio.enabled ? 'activado' : 'silenciado'}`, "group");
-                }
-            }
-        }
-        toggleCam() {
-            if (this.localStream) {
-                const video = this.localStream.getVideoTracks()[0];
-                if (video) {
-                    video.enabled = !video.enabled;
-                    this.camBtn.innerHTML = video.enabled ? "📷 Cámara ON" : "📷 Cámara OFF";
-                    log(`Cámara ${video.enabled ? 'activada' : 'apagada'}`, "group");
-                }
-            }
-        }
-        waitForIceGathering(pc) {
-            return new Promise(resolve => {
-                if (pc.iceGatheringState === 'complete') resolve();
-                else pc.onicegatheringstatechange = () => {
-                    if (pc.iceGatheringState === 'complete') resolve();
-                };
-            });
-        }
-        async createPeerConnection(remoteClientId, remotePhone) {
-            const pc = new RTCPeerConnection({ iceServers });
-            if (this.localStream) {
-                this.localStream.getTracks().forEach(t => pc.addTrack(t, this.localStream));
-            }
-            pc.ontrack = (event) => {
-                if (!this.peers.has(remoteClientId)) {
-                    this.peers.set(remoteClientId, { pc, stream: new MediaStream() });
-                }
-                const peer = this.peers.get(remoteClientId);
-                peer.stream.addTrack(event.track);
-                this.addRemoteVideo(remoteClientId, remotePhone, peer.stream);
-                log(`📺 Track recibido de ${remotePhone}`, "group");
-            };
-            pc.oniceconnectionstatechange = () => {
-                log(`ICE state con ${remotePhone}: ${pc.iceConnectionState}`, "group");
-                if (pc.iceConnectionState === 'failed') this.closePeerConnection(remoteClientId);
-            };
-            return pc;
-        }
-        async closePeerConnection(remoteClientId) {
-            const peer = this.peers.get(remoteClientId);
-            if (peer) {
-                peer.pc.close();
-                this.removeRemoteVideo(remoteClientId);
-                this.peers.delete(remoteClientId);
-            }
-        }
-        async callParticipant(remoteClientId, remotePhone) {
-            try {
-                let pc = this.peers.get(remoteClientId)?.pc;
-                if (!pc) {
-                    pc = await this.createPeerConnection(remoteClientId, remotePhone);
-                    this.peers.set(remoteClientId, { pc, stream: null });
-                }
-                const offer = await pc.createOffer();
-                await pc.setLocalDescription(offer);
-                await this.waitForIceGathering(pc);
-                await set(ref(db, `rooms/${this.currentRoomId}/connections/${myClientId}/${remoteClientId}/offer`), pc.localDescription.sdp);
-                log(`📞 Oferta enviada a ${remotePhone}`, "group");
-                const answerRef = ref(db, `rooms/${this.currentRoomId}/connections/${myClientId}/${remoteClientId}/answer`);
-                const unsub = onValue(answerRef, async (snap) => {
-                    const ans = snap.val();
-                    if (ans && pc && pc.remoteDescription === null) {
-                        await pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: ans }));
-                        log(`✅ Respuesta de ${remotePhone}`, "group");
-                        unsub();
-                    }
-                });
-            } catch (err) { log(`Error calling ${remotePhone}: ${err.message}`, "group"); }
-        }
-        async handleOffer(offerSDP, fromId, fromPhone) {
-            try {
-                let pc = this.peers.get(fromId)?.pc;
-                if (!pc) {
-                    pc = await this.createPeerConnection(fromId, fromPhone);
-                    this.peers.set(fromId, { pc, stream: null });
-                }
-                await pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: offerSDP }));
-                const answer = await pc.createAnswer();
-                await pc.setLocalDescription(answer);
-                await this.waitForIceGathering(pc);
-                await set(ref(db, `rooms/${this.currentRoomId}/connections/${fromId}/${myClientId}/answer`), pc.localDescription.sdp);
-                log(`📞 Respuesta enviada a ${fromPhone}`, "group");
-            } catch (err) { log(`Error respondiendo a ${fromPhone}: ${err.message}`, "group"); }
-        }
-        listenForOffers() {
-            const offersRef = ref(db, `rooms/${this.currentRoomId}/connections/${myClientId}`);
-            onValue(offersRef, (snap) => {
-                const offers = snap.val();
-                if (!offers) return;
-                for (const [fromId, data] of Object.entries(offers)) {
-                    if (fromId === myClientId) continue;
-                    if (data.offer && !this.peers.has(fromId)) {
-                        const partRef = ref(db, `rooms/${this.currentRoomId}/participants/${fromId}`);
-                        onValue(partRef, (s) => {
-                            const part = s.val();
-                            if (part) this.handleOffer(data.offer, fromId, part.phoneNumber);
-                        }, { once: true });
-                    }
-                }
-            });
-        }
-        listenParticipants() {
-            const participantsRef = ref(db, `rooms/${this.currentRoomId}/participants`);
-            onValue(participantsRef, (snap) => {
-                const participants = snap.val();
-                if (!participants) {
-                    this.participantsList.innerHTML = '<span>No hay participantes</span>';
-                    return;
-                }
-                const current = [];
-                for (const [id, data] of Object.entries(participants)) {
-                    if (id !== myClientId) current.push({ id, phone: data.phoneNumber });
-                }
-                this.participantsList.innerHTML = current.map(p => `<span class="participant-badge">📞 ${p.phone}</span>`).join('');
-                for (const p of current) {
-                    if (!this.peers.has(p.id)) this.callParticipant(p.id, p.phone);
-                }
-                for (const [id] of this.peers) {
-                    if (id !== myClientId && !participants[id]) this.closePeerConnection(id);
-                }
-            });
-        }
-        async createRoom() {
-            if (!myPhoneNumber) { alert("Primero registra tu número"); return; }
-            const roomId = this.roomIdInput.value.trim();
-            if (!roomId) { alert("Ingresa un código de sala"); return; }
-            await this.getLocalStream();
-            this.currentRoomId = roomId;
-            const partRef = ref(db, `rooms/${roomId}/participants/${myClientId}`);
-            await set(partRef, { phoneNumber: myPhoneNumber, clientId: myClientId, joinedAt: Date.now() });
-            onDisconnect(partRef).remove();
-            this.peers.clear();
-            this.listenParticipants();
-            this.listenForOffers();
-            this.participantsPanel.classList.remove('hidden');
-            this.leaveBtn.disabled = false;
-            this.createBtn.disabled = true;
-            this.joinBtn.disabled = true;
-            log(`✅ Sala "${roomId}" creada`, "group");
-        }
-        async joinRoom() {
-            if (!myPhoneNumber) { alert("Primero registra tu número"); return; }
-            const roomId = this.roomIdInput.value.trim();
-            if (!roomId) { alert("Ingresa un código de sala"); return; }
-            await this.getLocalStream();
-            this.currentRoomId = roomId;
-            const partRef = ref(db, `rooms/${roomId}/participants/${myClientId}`);
-            await set(partRef, { phoneNumber: myPhoneNumber, clientId: myClientId, joinedAt: Date.now() });
-            onDisconnect(partRef).remove();
-            this.peers.clear();
-            this.listenParticipants();
-            this.listenForOffers();
-            this.participantsPanel.classList.remove('hidden');
-            this.leaveBtn.disabled = false;
-            this.createBtn.disabled = true;
-            this.joinBtn.disabled = true;
-            log(`✅ Unido a sala "${roomId}"`, "group");
-        }
-        async leaveRoom() {
-            if (this.currentRoomId) {
-                await remove(ref(db, `rooms/${this.currentRoomId}/participants/${myClientId}`));
-                for (const [id] of this.peers) await this.closePeerConnection(id);
-                this.peers.clear();
-                this.currentRoomId = null;
-                const remoteCards = document.querySelectorAll('[id^="remote-"]');
-                remoteCards.forEach(c => c.remove());
-                this.participantsPanel.classList.add('hidden');
-                this.leaveBtn.disabled = true;
-                this.createBtn.disabled = false;
-                this.joinBtn.disabled = false;
-                log("🔴 Saliste de la sala", "group");
-            }
-        }
-        async reset() {
-            await this.leaveRoom();
-            if (this.localStream) {
-                this.localStream.getTracks().forEach(t => t.stop());
-                this.localStream = null;
-                const myCard = document.getElementById('my-video-card-group');
-                if (myCard) myCard.remove();
-            }
-        }
-    }
+  let ans = await pc.createAnswer();
+  await pc.setLocalDescription(ans);
 
-    // ---------- CONTROL DE PESTAÑAS ----------
-    let videoCall, audioCall, chatCall, groupCall;
-    async function switchTab(tabId) {
-        // Cerrar conexión actual
-        if (activeCall) {
-            await activeCall.reset();
-        }
-        // Ocultar todos los contenidos
-        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-        document.getElementById(`${tabId}Tab`).classList.add('active');
-        // Activar el objeto correspondiente
-        if (tabId === 'video') {
-            if (!videoCall) videoCall = new VideoCall();
-            activeCall = videoCall;
-        } else if (tabId === 'audio') {
-            if (!audioCall) audioCall = new AudioCall();
-            activeCall = audioCall;
-        } else if (tabId === 'chat') {
-            if (!chatCall) chatCall = new ChatCall();
-            activeCall = chatCall;
-        } else if (tabId === 'group') {
-            if (!groupCall) groupCall = new GroupCall();
-            activeCall = groupCall;
-        }
-        currentTab = tabId;
-    }
+  await waitICE();
 
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            switchTab(btn.dataset.tab);
-        });
-    });
+  await set(ref(db,"calls/"+id+"/answer"), pc.localDescription.sdp);
 
-    // ---------- REGISTRO DE USUARIO ----------
-    document.getElementById('setPhoneBtn').addEventListener('click', async () => {
-        let phone = document.getElementById('phoneInput').value.trim();
-        if (!phone) { alert("Ingresa un número"); return; }
-        myPhoneNumber = phone;
-        if (!myClientId) {
-            myClientId = generateUUID();
-            sessionStorage.setItem("myow_client_id", myClientId);
-        }
-        await updatePresence();
-        log(`🎉 Registrado como ${myPhoneNumber}`);
-        // Inicializar pestaña activa (video por defecto)
-        if (!videoCall) videoCall = new VideoCall();
-        activeCall = videoCall;
-    });
+  callId = id;
+};
 
-    const storedId = sessionStorage.getItem("myow_client_id");
-    if (storedId) {
-        myClientId = storedId;
-        log(`Cliente ID recuperado: ${myClientId}`);
-    } else {
-        myClientId = generateUUID();
-        sessionStorage.setItem("myow_client_id", myClientId);
-        log(`Nuevo cliente ID: ${myClientId}`);
-    }
-    document.getElementById('connectionStatus').innerHTML = "⚡ Esperando número...";
-    log("🚀 App iniciada");
+// ---------- RECHAZAR ----------
+window.reject = async (id)=>{
+  await remove(ref(db,"calls/"+id));
+};
 
-    window.addEventListener('beforeunload', () => {
-        if (myClientId) remove(ref(db, `presence/${myClientId}`));
-        if (activeCall) activeCall.reset();
-    });
+// ---------- ICE ----------
+function waitICE(){
+ return new Promise(res=>{
+  if(pc.iceGatheringState==="complete") res();
+  else pc.onicegatheringstatechange=()=>{
+    if(pc.iceGatheringState==="complete") res();
+  };
+ });
+}
+
+// ---------- PLAY ----------
+window.playRemote = ()=>{
+ document.getElementById("remote").play();
+};
+
+// ---------- COLGAR ----------
+window.hangup = async ()=>{
+ if(callId) await remove(ref(db,"calls/"+callId));
+ if(pc) pc.close();
+};
+
 </script>
 </body>
 </html>
