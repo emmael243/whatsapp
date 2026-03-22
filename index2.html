@@ -3,219 +3,266 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MyOW PWA</title>
+<title>MyOW Chat</title>
 
 <link rel="manifest" href="manifest.json">
 
 <style>
-body { font-family: sans-serif; background:#0a0f1c; color:white; text-align:center; }
-input,button { padding:10px; margin:5px; border-radius:20px; border:none; }
-button { background:#3b82f6; color:white; font-weight:bold; }
-video { width:45%; margin:5px; border-radius:12px; }
-#incoming { background:#f97316; padding:10px; border-radius:20px; display:none; }
+body {
+    margin:0;
+    font-family: Arial;
+    background:#0b141a;
+    color:white;
+}
+
+/* HEADER tipo WhatsApp */
+.header {
+    background:#202c33;
+    padding:10px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.header input {
+    background:#2a3942;
+    border:none;
+    color:white;
+    padding:8px;
+    border-radius:20px;
+}
+
+/* TABS */
+.tabs {
+    display:flex;
+    background:#202c33;
+}
+
+.tab-btn {
+    flex:1;
+    padding:10px;
+    border:none;
+    background:none;
+    color:#aaa;
+    cursor:pointer;
+}
+
+.tab-btn.active {
+    color:#25d366;
+    border-bottom:2px solid #25d366;
+}
+
+/* LISTA contactos */
+.device-list {
+    height:200px;
+    overflow:auto;
+}
+
+.device-item {
+    padding:10px;
+    border-bottom:1px solid #222;
+    display:flex;
+    justify-content:space-between;
+}
+
+/* CHAT */
+.chat-box {
+    height:300px;
+    overflow:auto;
+    background:#111;
+    padding:10px;
+}
+
+.msg {
+    padding:6px 10px;
+    margin:5px;
+    border-radius:10px;
+    max-width:70%;
+}
+
+.sent {
+    background:#005c4b;
+    margin-left:auto;
+}
+
+.received {
+    background:#202c33;
+}
+
+input,button {
+    outline:none;
+}
+
+/* VIDEO */
+video {
+    width:100%;
+    max-height:200px;
+    background:black;
+}
+
+/* BOTONES */
+.btn {
+    background:#25d366;
+    border:none;
+    padding:8px 12px;
+    border-radius:20px;
+    cursor:pointer;
+}
 </style>
 </head>
 
 <body>
 
-<h2>📞 MyOW WhatsApp Style</h2>
+<div class="header">
+    <input id="phoneInput" placeholder="Tu número">
+    <button id="setPhoneBtn" class="btn">OK</button>
+</div>
 
-<input id="myNumber" placeholder="Tu número">
-<button onclick="register()">Registrar</button>
+<div class="tabs">
+    <button class="tab-btn active" data-tab="video">📹</button>
+    <button class="tab-btn" data-tab="audio">🎙</button>
+    <button class="tab-btn" data-tab="chat">💬</button>
+    <button class="tab-btn" data-tab="group">👥</button>
+</div>
 
-<br><br>
+<!-- VIDEO -->
+<div id="videoTab">
+    <ul id="videoDeviceList" class="device-list"></ul>
+    <video id="videoLocal" autoplay muted></video>
+    <video id="videoRemote" autoplay></video>
+    <button id="videoHangup">Colgar</button>
+</div>
 
-<input id="callNumber" placeholder="Número a llamar">
-<button onclick="call()">📞 Llamar</button>
+<!-- AUDIO -->
+<div id="audioTab" style="display:none">
+    <ul id="audioDeviceList" class="device-list"></ul>
+    <button id="audioHangup">Colgar</button>
+</div>
 
-<div id="incoming"></div>
+<!-- CHAT -->
+<div id="chatTab" style="display:none">
+    <ul id="chatDeviceList" class="device-list"></ul>
 
-<br>
+    <div id="chatMessages" class="chat-box"></div>
 
-<video id="local" autoplay muted playsinline></video>
-<video id="remote" playsinline></video>
+    <input id="chatInput">
+    <button id="chatSendBtn">Enviar</button>
+</div>
 
-<br>
-<button onclick="playRemote()">▶️ Play</button>
-<button onclick="hangup()">❌ Colgar</button>
+<!-- GROUP -->
+<div id="groupTab" style="display:none">
+    <input id="groupRoomId">
+    <button id="groupCreateBtn">Crear</button>
+    <button id="groupJoinBtn">Unirse</button>
+
+    <div id="groupVideoGrid"></div>
+</div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-app.js";
-import { getDatabase, ref, set, onValue, push, remove, onDisconnect } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-database.js";
 
-const app = initializeApp({
-  apiKey: "AIzaSy...",
-  databaseURL: "https://myow-cdb46-default-rtdb.firebaseio.com"
-});
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-app.js";
+import { getDatabase, ref, set, onValue, push, remove } from "https://www.gstatic.com/firebasejs/10.7.2/firebase-database.js";
+
+const firebaseConfig = {
+    apiKey: "AIza...",
+    databaseURL: "https://myow-cdb46-default-rtdb.firebaseio.com"
+};
+
+const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-let myId = localStorage.getItem("id") || crypto.randomUUID();
-localStorage.setItem("id", myId);
-
-let myPhone = "";
-let pc, localStream, callId;
-
+/* TURN */
 const iceServers = [
- { urls: "stun:stun.l.google.com:19302" },
- {
-  urls: [
-   "turn:global.turn.metered.live:3478",
-   "turn:global.turn.metered.live:443"
-  ],
-  username: "6add749aa39bded58851f0d5",
-  credential: "TF2Z0iD5X45aIWpX"
- }
+    { urls:"stun:stun.l.google.com:19302"},
+    {
+        urls:"turn:global.turn.metered.live:3478",
+        username:"6add749aa39bded58851f0d5",
+        credential:"TF2Z0iD5X45aIWpX"
+    }
 ];
 
-function log(t){console.log(t)}
+let myId = Math.random().toString(36).substr(2,9);
+let myPhone = "";
 
-// ---------- REGISTRO ----------
-window.register = async () => {
-  myPhone = document.getElementById("myNumber").value;
-
-  await set(ref(db, "users/"+myPhone), {
-    id: myId
-  });
-
-  onDisconnect(ref(db, "users/"+myPhone)).remove();
-
-  listenIncoming();
-  alert("Registrado ✅");
+/* -------- REGISTRO -------- */
+document.getElementById("setPhoneBtn").onclick=()=>{
+    myPhone=document.getElementById("phoneInput").value;
+    set(ref(db,"presence/"+myId),{phone:myPhone});
 };
 
-// ---------- STREAM ----------
-async function getStream(){
-  if(localStream) return localStream;
-  localStream = await navigator.mediaDevices.getUserMedia({video:true,audio:true});
-  document.getElementById("local").srcObject = localStream;
+/* -------- VIDEO -------- */
+let pc;
+
+async function callUser(id){
+    pc=new RTCPeerConnection({iceServers});
+
+    const stream=await navigator.mediaDevices.getUserMedia({video:true,audio:true});
+    document.getElementById("videoLocal").srcObject=stream;
+
+    stream.getTracks().forEach(t=>pc.addTrack(t,stream));
+
+    pc.ontrack=e=>{
+        document.getElementById("videoRemote").srcObject=e.streams[0];
+    };
+
+    const offer=await pc.createOffer();
+    await pc.setLocalDescription(offer);
+
+    set(ref(db,"calls/"+myId),{offer:offer.sdp,to:id});
 }
 
-// ---------- PC ----------
-function createPC(){
-  pc = new RTCPeerConnection({iceServers});
+/* LISTA */
+onValue(ref(db,"presence"),snap=>{
+    let html="";
+    snap.forEach(c=>{
+        if(c.key!==myId){
+            html+=`<li class="device-item">${c.val().phone}
+            <button onclick="callUser('${c.key}')">Llamar</button></li>`;
+        }
+    });
+    videoDeviceList.innerHTML=html;
+});
 
-  localStream.getTracks().forEach(t=>pc.addTrack(t,localStream));
+/* -------- CHAT -------- */
+let dc;
 
-  pc.ontrack = e=>{
-    document.getElementById("remote").srcObject = e.streams[0];
-  };
+async function connectChat(id){
+    pc=new RTCPeerConnection({iceServers});
+    dc=pc.createDataChannel("chat");
 
-  pc.onconnectionstatechange = ()=>{
-    log(pc.connectionState);
-  };
+    dc.onmessage=e=>{
+        chatMessages.innerHTML+=`<div class="msg received">${e.data}</div>`;
+    };
+
+    const offer=await pc.createOffer();
+    await pc.setLocalDescription(offer);
+
+    set(ref(db,"chat/"+myId),{offer:offer.sdp,to:id});
 }
 
-// ---------- LLAMAR ----------
-window.call = async () => {
-  let num = document.getElementById("callNumber").value;
-
-  const snap = await new Promise(res=>{
-    onValue(ref(db,"users/"+num), s=>res(s.val()),{onlyOnce:true});
-  });
-
-  if(!snap){ alert("No existe"); return; }
-
-  await getStream();
-  createPC();
-
-  let offer = await pc.createOffer();
-  await pc.setLocalDescription(offer);
-
-  await waitICE();
-
-  callId = push(ref(db,"calls")).key;
-
-  await set(ref(db,"calls/"+callId),{
-    to:num,
-    from:myPhone,
-    offer:pc.localDescription.sdp
-  });
-
-  onValue(ref(db,"calls/"+callId+"/answer"), async s=>{
-    if(s.val()){
-      await pc.setRemoteDescription({
-        type:"answer",
-        sdp:s.val()
-      });
-    }
-  });
+chatSendBtn.onclick=()=>{
+    dc.send(chatInput.value);
+    chatMessages.innerHTML+=`<div class="msg sent">${chatInput.value}</div>`;
 };
 
-// ---------- RECIBIR ----------
-function listenIncoming(){
-  onValue(ref(db,"calls"), snap=>{
-    let data = snap.val();
-    if(!data) return;
+/* -------- TABS -------- */
+document.querySelectorAll(".tab-btn").forEach(btn=>{
+    btn.onclick=()=>{
+        document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+        btn.classList.add("active");
 
-    for(let id in data){
-      let c = data[id];
-      if(c.to===myPhone){
-        showIncoming(id,c);
-        break;
-      }
-    }
-  });
+        ["video","audio","chat","group"].forEach(t=>{
+            document.getElementById(t+"Tab").style.display="none";
+        });
+
+        document.getElementById(btn.dataset.tab+"Tab").style.display="block";
+    };
+});
+
+/* -------- PWA -------- */
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
 }
-
-function showIncoming(id,call){
-  let div = document.getElementById("incoming");
-  div.style.display="block";
-  div.innerHTML = `
-    📞 ${call.from}
-    <button onclick="accept('${id}')">Aceptar</button>
-    <button onclick="reject('${id}')">Rechazar</button>
-  `;
-}
-
-// ---------- ACEPTAR ----------
-window.accept = async (id)=>{
-  let call = (await new Promise(res=>{
-    onValue(ref(db,"calls/"+id), s=>res(s.val()),{onlyOnce:true});
-  }));
-
-  await getStream();
-  createPC();
-
-  await pc.setRemoteDescription({
-    type:"offer",
-    sdp:call.offer
-  });
-
-  let ans = await pc.createAnswer();
-  await pc.setLocalDescription(ans);
-
-  await waitICE();
-
-  await set(ref(db,"calls/"+id+"/answer"), pc.localDescription.sdp);
-
-  callId = id;
-};
-
-// ---------- RECHAZAR ----------
-window.reject = async (id)=>{
-  await remove(ref(db,"calls/"+id));
-};
-
-// ---------- ICE ----------
-function waitICE(){
- return new Promise(res=>{
-  if(pc.iceGatheringState==="complete") res();
-  else pc.onicegatheringstatechange=()=>{
-    if(pc.iceGatheringState==="complete") res();
-  };
- });
-}
-
-// ---------- PLAY ----------
-window.playRemote = ()=>{
- document.getElementById("remote").play();
-};
-
-// ---------- COLGAR ----------
-window.hangup = async ()=>{
- if(callId) await remove(ref(db,"calls/"+callId));
- if(pc) pc.close();
-};
 
 </script>
 </body>
