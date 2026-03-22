@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>MyOW - Llamadas WebRTC con TURN</title>
+    <title>MyOW - Llamadas WebRTC con TURN y persistencia</title>
     <style>
-        /* (mismo CSS que antes, no cambia) */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -189,7 +188,7 @@
 <body>
 <div class="container">
     <div class="header">
-        <div class="logo"><h1>📞 MyOW Call - Con TURN</h1></div>
+        <div class="logo"><h1>📞 MyOW Call - Con TURN y persistencia</h1></div>
         <div class="user-area">
             <input type="tel" id="phoneInput" placeholder="+34 600 000 000" autocomplete="off">
             <button id="setPhoneBtn">✅ Registrar número</button>
@@ -335,8 +334,11 @@
                 return;
             }
             const devices = [];
+            const now = Date.now();
             for (let [id, info] of Object.entries(data)) {
                 if (id === myClientId) continue;
+                // Filtrar fantasmas: si el timestamp es mayor a 2 minutos, se ignora
+                if (info.timestamp && (now - info.timestamp > 120000)) continue;
                 devices.push({ clientId: id, phoneNumber: info.phoneNumber || "???" });
             }
             if (devices.length === 0) {
@@ -663,7 +665,7 @@
         }
     });
 
-    // Función para registrar el número
+    // Función para registrar el número (usada tanto al hacer clic en registrar como al cargar desde localStorage)
     async function registerPhone(phone) {
         myPhoneNumber = phone;
         if (!myClientId) {
@@ -673,9 +675,11 @@
         await updatePresence();
         listenIncomingCalls();
         listenDevices();
+        // Guardar en localStorage para futuras visitas
         localStorage.setItem("myow_phone", myPhoneNumber);
         localStorage.setItem("myow_client_id", myClientId);
         log(`🎉 Registrado como ${myPhoneNumber}`);
+        // Ocultar input y mostrar botón de cambiar número
         phoneInput.classList.add('hidden');
         setPhoneBtn.classList.add('hidden');
         changeNumberBtn.classList.remove('hidden');
@@ -683,21 +687,27 @@
 
     // Función para resetear y cambiar número
     async function resetAndChangeNumber() {
+        // Eliminar presencia en Firebase
         if (myClientId) {
             await remove(ref(db, `presence/${myClientId}`));
         }
+        // Cerrar cualquier llamada activa
         if (activeCallId) {
             await endCall();
         }
+        // Limpiar localStorage
         localStorage.removeItem("myow_phone");
         localStorage.removeItem("myow_client_id");
+        // Resetear variables
         myClientId = null;
         myPhoneNumber = "";
+        // Reiniciar UI
         phoneInput.classList.remove('hidden');
         setPhoneBtn.classList.remove('hidden');
         changeNumberBtn.classList.add('hidden');
         connectionStatusSpan.innerHTML = "⚪ Desconectado";
         deviceListUl.innerHTML = '<li style="opacity:0.6">🔍 Esperando dispositivos...</li>';
+        // Opcional: limpiar videos
         if (localStream) {
             localStream.getTracks().forEach(t => t.stop());
             localStream = null;
@@ -729,6 +739,7 @@
         myClientId = storedClientId;
         sessionStorage.setItem("myow_client_id", myClientId);
         log(`📱 Número recuperado: ${myPhoneNumber}`);
+        // Iniciar conexión automática
         (async () => {
             await updatePresence();
             listenIncomingCalls();
@@ -739,6 +750,7 @@
             changeNumberBtn.classList.remove('hidden');
         })();
     } else {
+        // No hay número guardado, mostrar formulario normalmente
         log("🚀 App iniciada, esperando registro");
         phoneInput.classList.remove('hidden');
         setPhoneBtn.classList.remove('hidden');
