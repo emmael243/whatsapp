@@ -1,294 +1,83 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test WebRTC - TURN activo</title>
+    <title>WebRTC Test</title>
     <style>
-        body {
-            font-family: monospace;
-            background: #1e1e2f;
-            color: white;
-            padding: 20px;
-        }
-        video {
-            width: 45%;
-            background: black;
-            transform: scaleX(-1);
-            margin: 10px;
-        }
-        button {
-            margin: 5px;
-            padding: 10px;
-        }
-        #devices {
-            margin: 20px 0;
-            background: #2a2a35;
-            padding: 10px;
-        }
-        .device {
-            display: inline-block;
-            background: #3b82f6;
-            margin: 5px;
-            padding: 5px 10px;
-            border-radius: 20px;
-            cursor: pointer;
-        }
+        body { display: flex; flex-direction: column; align-items: center; margin: 0; padding: 0; }
+        video { width: 45%; margin: 10px; border: 1px solid black; }
+        #videos { display: flex; justify-content: center; width: 100%; }
     </style>
 </head>
 <body>
-    <h1>🔴 Test WebRTC (TURN activo)</h1>
-    <div>
-        <label>Tu número: <input id="myPhone" placeholder="ej: +123"></label>
-        <button id="register">Registrar</button>
+    <h1>WebRTC Cliente HTML5</h1>
+    <div id="videos">
+        <video id="localVideo" autoplay muted playsinline></video>
+        <video id="remoteVideo" autoplay playsinline></video>
     </div>
-    <div id="devices"></div>
-    <div>
-        <video id="localVideo" autoplay muted></video>
-        <video id="remoteVideo" autoplay></video>
-    </div>
-    <div id="status"></div>
 
-    <script type="importmap">
-        {
-            "imports": {
-                "firebase/app": "https://www.gstatic.com/firebasejs/10.7.2/firebase-app.js",
-                "firebase/database": "https://www.gstatic.com/firebasejs/10.7.2/firebase-database.js"
-            }
-        }
-    </script>
-    <script type="module">
-        import { initializeApp } from "firebase/app";
-        import { getDatabase, ref, set, onValue, push, remove, onDisconnect } from "firebase/database";
+    <script>
+        const signalingUrl = "wss://c9cc8b92-9999-4141-a186-ef5d390b338d-00-mpv778c5pccd.riker.replit.dev/ws";
+        const roomId = "mi-sala";
 
-        // Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyD29ExpZwaXQGV059fQGZ-3i0GMzk353o0",
-            authDomain: "myow-cdb46.firebaseapp.com",
-            databaseURL: "https://myow-cdb46-default-rtdb.firebaseio.com",
-            projectId: "myow-cdb46",
-            storageBucket: "myow-cdb46.firebasestorage.app",
-            messagingSenderId: "651159312592",
-            appId: "1:651159312592:web:98404f13e075fdce4d26d5",
-            measurementId: "G-W53ZFMPW7X"
+        let localStream;
+        let pc;
+        const localVideo = document.getElementById("localVideo");
+        const remoteVideo = document.getElementById("remoteVideo");
+
+        const ws = new WebSocket(signalingUrl);
+
+        ws.onopen = () => {
+            console.log("WebSocket conectado ✅");
+            ws.send(JSON.stringify({ type: "join", roomId: roomId }));
         };
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
 
-        // TURN (Metered)
-        const turnConfig = {
-            urls: [
-                "turn:global.turn.metered.live:3478?transport=udp",
-                "turn:global.turn.metered.live:3478?transport=tcp",
-                "turn:global.turn.metered.live:443?transport=tcp"
-            ],
-            username: "6add749aa39bded58851f0d5",
-            credential: "TF2Z0iD5X45aIWpX"
-        };
-        const iceServers = [
-            { urls: "stun:stun.l.google.com:19302" },
-            { urls: "stun:stun1.l.google.com:19302" },
-            turnConfig
-        ];
-
-        let myClientId = null;
-        let myPhone = "";
-        let pc = null;
-        let localStream = null;
-        let activeCallId = null;
-        let isCaller = false;
-
-        const localVideo = document.getElementById('localVideo');
-        const remoteVideo = document.getElementById('remoteVideo');
-        const statusDiv = document.getElementById('status');
-
-        function log(msg) {
-            statusDiv.innerHTML += `<div>${new Date().toLocaleTimeString()}: ${msg}</div>`;
-            console.log(msg);
-        }
-
-        function generateId() {
-            return 'id-' + Date.now() + '-' + Math.random().toString(36).substr(2, 8);
-        }
-
-        async function getLocalStream() {
-            if (localStream) return localStream;
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                localStream = stream;
-                localVideo.srcObject = stream;
-                log("✅ Stream local obtenido");
-                return stream;
-            } catch (err) {
-                log(`❌ Error: ${err.message}`);
-                throw err;
+        ws.onmessage = async (event) => {
+            const data = JSON.parse(event.data);
+            switch(data.type) {
+                case "offer":
+                    await pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp: data.sdp }));
+                    const answer = await pc.createAnswer();
+                    await pc.setLocalDescription(answer);
+                    ws.send(JSON.stringify({ type: "answer", sdp: answer.sdp }));
+                    break;
+                case "answer":
+                    await pc.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp: data.sdp }));
+                    break;
+                case "ice":
+                    const candidate = new RTCIceCandidate(data.candidate);
+                    await pc.addIceCandidate(candidate);
+                    break;
             }
-        }
+        };
 
-        function waitForIceGathering(pc) {
-            return new Promise(resolve => {
-                if (pc.iceGatheringState === 'complete') resolve();
-                else pc.onicegatheringstatechange = () => {
-                    if (pc.iceGatheringState === 'complete') resolve();
-                };
+        async function init() {
+            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+            localVideo.srcObject = localStream;
+
+            pc = new RTCPeerConnection({
+                iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
             });
-        }
 
-        function createPeerConnection() {
-            if (pc) pc.close();
-            const newPc = new RTCPeerConnection({ iceServers });
-            if (localStream) {
-                localStream.getTracks().forEach(t => newPc.addTrack(t, localStream));
-            }
-            newPc.ontrack = (event) => {
-                if (event.streams && event.streams[0]) {
-                    remoteVideo.srcObject = event.streams[0];
-                } else {
-                    if (!remoteVideo.srcObject) remoteVideo.srcObject = new MediaStream();
-                    remoteVideo.srcObject.addTrack(event.track);
+            pc.onicecandidate = (event) => {
+                if (event.candidate) {
+                    ws.send(JSON.stringify({ type: "ice", candidate: event.candidate }));
                 }
-                log("📺 Track recibido");
             };
-            newPc.oniceconnectionstatechange = () => {
-                log(`ICE state: ${newPc.iceConnectionState}`);
-                if (newPc.iceConnectionState === 'connected') log("🎉 CONEXIÓN ESTABLECIDA");
-                else if (newPc.iceConnectionState === 'failed') log("❌ ICE falló");
+
+            pc.ontrack = (event) => {
+                remoteVideo.srcObject = event.streams[0];
             };
-            return newPc;
+
+            localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+
+            // Crear oferta solo si eres el primer peer (opcional)
+            // const offer = await pc.createOffer();
+            // await pc.setLocalDescription(offer);
+            // ws.send(JSON.stringify({ type: "offer", sdp: offer.sdp }));
         }
 
-        async function initiateCall(calleeId, calleePhone) {
-            try {
-                await getLocalStream();
-                pc = createPeerConnection();
-                const offer = await pc.createOffer();
-                await pc.setLocalDescription(offer);
-                await waitForIceGathering(pc);
-                const callId = push(ref(db, 'calls')).key;
-                activeCallId = callId;
-                isCaller = true;
-                await set(ref(db, `calls/${callId}`), {
-                    callerId: myClientId,
-                    calleeId: calleeId,
-                    callerPhone: myPhone,
-                    calleePhone: calleePhone,
-                    offer: pc.localDescription.sdp,
-                    status: "calling",
-                    createdAt: Date.now()
-                });
-                log(`📞 Llamando a ${calleePhone}`);
-
-                // Escuchar respuesta
-                onValue(ref(db, `calls/${callId}/answer`), async (snap) => {
-                    const ans = snap.val();
-                    if (ans && pc && pc.remoteDescription === null) {
-                        await pc.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp: ans }));
-                        log("✅ Respuesta recibida");
-                    }
-                });
-                // Limpiar si se borra
-                onValue(ref(db, `calls/${callId}`), (snap) => { if (!snap.exists()) endCall(); });
-            } catch (err) {
-                log(`Error iniciando llamada: ${err.message}`);
-            }
-        }
-
-        async function acceptCall(callId, callData) {
-            try {
-                await getLocalStream();
-                pc = createPeerConnection();
-                await pc.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp: callData.offer }));
-                const answer = await pc.createAnswer();
-                await pc.setLocalDescription(answer);
-                await waitForIceGathering(pc);
-                await set(ref(db, `calls/${callId}/answer`), pc.localDescription.sdp);
-                await set(ref(db, `calls/${callId}/status`), "accepted");
-                activeCallId = callId;
-                isCaller = false;
-                log("✅ Llamada aceptada");
-                onValue(ref(db, `calls/${callId}`), (snap) => { if (!snap.exists()) endCall(); });
-            } catch (err) {
-                log(`Error aceptando llamada: ${err.message}`);
-            }
-        }
-
-        async function endCall() {
-            if (activeCallId) {
-                await remove(ref(db, `calls/${activeCallId}`));
-                if (pc) pc.close();
-                pc = null;
-                activeCallId = null;
-                remoteVideo.srcObject = null;
-                log("🔴 Llamada finalizada");
-            }
-        }
-
-        function listenIncomingCalls() {
-            onValue(ref(db, 'calls'), (snap) => {
-                if (!activeCallId && snap.val()) {
-                    for (let [id, call] of Object.entries(snap.val())) {
-                        if (call.calleeId === myClientId && call.status === "calling") {
-                            if (confirm(`Llamada entrante de ${call.callerPhone}. ¿Aceptar?`)) {
-                                acceptCall(id, call);
-                            } else {
-                                remove(ref(db, `calls/${id}`));
-                            }
-                            break;
-                        }
-                    }
-                }
-            });
-        }
-
-        // Mostrar dispositivos activos
-        function listenDevices() {
-            const presenceRef = ref(db, 'presence');
-            onValue(presenceRef, (snap) => {
-                const data = snap.val();
-                if (!data) return;
-                const devices = [];
-                for (let [id, info] of Object.entries(data)) {
-                    if (id !== myClientId) devices.push({ clientId: id, phone: info.phoneNumber });
-                }
-                const container = document.getElementById('devices');
-                if (devices.length === 0) {
-                    container.innerHTML = '<div>No hay otros dispositivos conectados.</div>';
-                    return;
-                }
-                container.innerHTML = devices.map(d => `<div class="device" data-id="${d.clientId}" data-phone="${d.phone}">📞 ${d.phone}</div>`).join('');
-                document.querySelectorAll('.device').forEach(btn => {
-                    btn.onclick = () => initiateCall(btn.dataset.id, btn.dataset.phone);
-                });
-            });
-        }
-
-        // Registrar usuario
-        document.getElementById('register').onclick = async () => {
-            const phone = document.getElementById('myPhone').value.trim();
-            if (!phone) { alert("Ingresa un número"); return; }
-            myPhone = phone;
-            if (!myClientId) {
-                myClientId = generateId();
-                sessionStorage.setItem("myow_client_id", myClientId);
-            }
-            await set(ref(db, `presence/${myClientId}`), {
-                phoneNumber: myPhone,
-                clientId: myClientId,
-                timestamp: Date.now(),
-                online: true
-            });
-            onDisconnect(ref(db, `presence/${myClientId}`)).remove();
-            log(`✅ Registrado como ${myPhone}`);
-            listenDevices();
-            listenIncomingCalls();
-        };
-
-        // Recuperar cliente ID
-        const storedId = sessionStorage.getItem("myow_client_id");
-        if (storedId) {
-            myClientId = storedId;
-            log(`Cliente ID recuperado: ${myClientId}`);
-        }
+        init();
     </script>
 </body>
 </html>
