@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-<title>Smart Wealth System 2026 | Guía 3 idiomas · Pasos animados</title>
+<title>Smart Wealth System 2026 | Guía 3 idiomas · Admin Protegido</title>
 <style>
   * {
     margin: 0;
@@ -240,18 +240,33 @@
     font-size: 0.7rem;
     opacity: 0.6;
   }
-  /* Botón admin exportar */
-  .export-btn {
-    background: #334155;
-    border: 1px solid #d4af37;
-    color: #d4af37;
-    margin-top: 20px;
-    padding: 10px;
-    font-size: 0.8rem;
+  /* Admin hidden panel */
+  .admin-hidden {
+    display: none;
   }
-  .export-btn:hover {
-    background: #d4af37;
-    color: #0b1220;
+  .admin-link {
+    text-align: center;
+    margin-top: 15px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    opacity: 0.5;
+    transition: 0.2s;
+  }
+  .admin-link:hover {
+    opacity: 1;
+    color: #d4af37;
+  }
+  .phone-privacy {
+    background: rgba(0,0,0,0.3);
+    border-radius: 20px;
+    padding: 12px;
+    margin-top: 20px;
+    font-size: 0.75rem;
+    text-align: center;
+  }
+  .phone-privacy i {
+    color: #25D366;
+    margin-right: 6px;
   }
   @media (max-width: 550px) {
     .steps-list { flex-direction: column; gap: 8px; }
@@ -362,7 +377,7 @@
     </a>
   </div>
 
-  <!-- PÁGINA 3: DESCARGA PDF + ADMIN EXPORT -->
+  <!-- PÁGINA 3: DESCARGA PDF + ADMIN PROTEGIDO -->
   <div id="page3" class="page">
     <h2><i class="fas fa-file-pdf"></i> <span data-i18n="pdf_title">Obtén tu PDF Bank-Grade</span></h2>
     <p data-i18n="pdf_subtitle">Descarga la guía completa "Smart Wealth System 2026" con diseño profesional.</p>
@@ -374,18 +389,35 @@
         <i class="fas fa-download"></i> <span data-i18n="download_btn_text">📥 Descargar PDF (Smart Wealth System)</span>
       </a>
       
-      <!-- SECCIÓN ADMIN: EXPORTAR EMAILS -->
-      <div style="margin-top: 25px; border-top: 1px solid #334155; padding-top: 15px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-          <span><i class="fas fa-envelope"></i> <strong>Leads capturados:</strong> <span id="leadCount">0</span></span>
-          <button id="exportEmailsBtn" class="btn export-btn" style="width: auto; padding: 8px 20px; margin: 0;">
-            <i class="fas fa-download"></i> 📥 Descargar emails (Admin)
-          </button>
-          <button id="clearLeadsBtn" class="btn export-btn" style="width: auto; padding: 8px 20px; margin: 0; background:#4a2e2e; border-color:#a55;">
-            <i class="fas fa-trash-alt"></i> Borrar leads
-          </button>
+      <!-- SECCIÓN ADMIN: SOLO VISIBLE CON CONTRASEÑA -->
+      <div id="adminPanelWrapper" style="margin-top: 25px; border-top: 1px solid #334155; padding-top: 15px;">
+        <!-- Enlace discreto para administrador -->
+        <div id="adminTrigger" class="admin-link">
+          <i class="fas fa-key"></i> <span data-i18n="admin_trigger">🔐 Acceso administrador</span>
         </div>
-        <p style="font-size: 0.65rem; margin-top: 8px; opacity: 0.6;" data-i18n="admin_note">* Solo visible para el administrador. Exporta todos los emails registrados en CSV.</p>
+        
+        <!-- Panel oculto que se muestra tras contraseña correcta -->
+        <div id="adminPanel" class="admin-hidden">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 10px;">
+            <span><i class="fas fa-envelope"></i> <strong data-i18n="leads_count_label">Leads capturados:</strong> <span id="leadCount">0</span></span>
+            <button id="exportEmailsBtn" class="btn export-btn" style="width: auto; padding: 8px 20px; margin: 0;">
+              <i class="fas fa-download"></i> 📥 <span data-i18n="export_btn">Descargar CSV</span>
+            </button>
+            <button id="clearLeadsBtn" class="btn export-btn" style="width: auto; padding: 8px 20px; margin: 0; background:#4a2e2e; border-color:#a55;">
+              <i class="fas fa-trash-alt"></i> <span data-i18n="clear_btn">Borrar leads</span>
+            </button>
+          </div>
+          <!-- Aviso de privacidad: solo el administrador tiene acceso -->
+          <div class="phone-privacy" style="background: #0a0f1a; margin-top: 12px;">
+            <i class="fas fa-user-shield"></i> <span data-i18n="privacy_disclaimer">🔒 Privacidad: Los emails se almacenan localmente en este dispositivo. Solo el administrador (con la contraseña) puede acceder a ellos. No se comparten con terceros.</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Muestra el número de celular y contacto directo -->
+      <div class="phone-privacy">
+        <i class="fab fa-whatsapp"></i> <strong data-i18n="contact_phone">Contacto directo / Soporte:</strong> <a href="https://wa.me/393514697366" style="color:#d4af37; text-decoration: none;">+39 351 469 7366</a>
+        <span style="display: block; font-size: 0.65rem; margin-top: 5px;" data-i18n="privacy_note_admin">📌 Solo el administrador tiene acceso a los datos de los leads. Ningún usuario externo puede verlos.</span>
       </div>
       
       <p style="font-size: 0.7rem; margin-top: 12px;" data-i18n="pdf_footer">*Al descargar aceptas recibir contenido educativo. Sin spam.</p>
@@ -394,7 +426,7 @@
 </div>
 
 <script>
-  // ------------------ TRADUCCIONES ------------------
+  // ------------------ TRADUCCIONES (incluyendo nuevas claves) ------------------
   const translations = {
     es: {
       title_main: "Smart Wealth System",
@@ -440,7 +472,13 @@
       nav_home: "Inicio",
       nav_guide: "Guía",
       nav_pdf: "PDF",
-      admin_note: "* Solo visible para el administrador. Exporta todos los emails registrados en CSV."
+      admin_trigger: "🔐 Acceso administrador",
+      leads_count_label: "Leads capturados:",
+      export_btn: "Descargar CSV",
+      clear_btn: "Borrar leads",
+      privacy_disclaimer: "🔒 Privacidad: Los emails se almacenan localmente en este dispositivo. Solo el administrador (con la contraseña) puede acceder a ellos. No se comparten con terceros.",
+      contact_phone: "Contacto directo / Soporte:",
+      privacy_note_admin: "📌 Solo el administrador tiene acceso a los datos de los leads. Ningún usuario externo puede verlos."
     },
     en: {
       title_main: "Smart Wealth System",
@@ -486,7 +524,13 @@
       nav_home: "Home",
       nav_guide: "Guide",
       nav_pdf: "PDF",
-      admin_note: "* Visible only to admin. Export all registered emails as CSV."
+      admin_trigger: "🔐 Admin access",
+      leads_count_label: "Leads captured:",
+      export_btn: "Export CSV",
+      clear_btn: "Delete leads",
+      privacy_disclaimer: "🔒 Privacy: Emails are stored locally on this device. Only the admin (with password) can access them. Not shared with third parties.",
+      contact_phone: "Direct contact / Support:",
+      privacy_note_admin: "📌 Only the admin has access to leads data. No external user can view them."
     },
     it: {
       title_main: "Smart Wealth System",
@@ -532,11 +576,18 @@
       nav_home: "Home",
       nav_guide: "Guida",
       nav_pdf: "PDF",
-      admin_note: "* Visibile solo all'amministratore. Esporta tutte le email registrate in CSV."
+      admin_trigger: "🔐 Accesso amministratore",
+      leads_count_label: "Lead catturati:",
+      export_btn: "Scarica CSV",
+      clear_btn: "Cancella lead",
+      privacy_disclaimer: "🔒 Privacy: Le email sono memorizzate localmente su questo dispositivo. Solo l'amministratore (con password) può accedervi. Non condivise con terze parti.",
+      contact_phone: "Contatto diretto / Supporto:",
+      privacy_note_admin: "📌 Solo l'amministratore ha accesso ai dati dei lead. Nessun utente esterno può vederli."
     }
   };
 
   let currentLang = 'es';
+  let adminAuthenticated = false;
 
   function applyLanguage(lang) {
     const t = translations[lang];
@@ -553,8 +604,6 @@
       navBtns[1].querySelector('span').innerHTML = t.nav_guide;
       navBtns[2].querySelector('span').innerHTML = t.nav_pdf;
     }
-    const adminNote = document.querySelector('[data-i18n="admin_note"]');
-    if (adminNote && t.admin_note) adminNote.innerHTML = t.admin_note;
     const progressMsgDiv = document.getElementById('progressMessage');
     if (progressMsgDiv && !allCompleted()) {
       progressMsgDiv.innerHTML = t.progress_msg_default;
@@ -563,7 +612,7 @@
     }
   }
 
-  // ----- FUNCIONES DE PASOS Y PROGRESO -----
+  // ----- FUNCIONES DE PASOS Y PROGRESO (idénticas) -----
   let completedSteps = { airtm: false, trading212: false, gold: false };
   function loadProgress() {
     const saved = localStorage.getItem('sws_steps');
@@ -642,14 +691,27 @@
     if (goldLink) goldLink.addEventListener('click', (e) => { e.preventDefault(); markStep('gold', 'cardGold'); setTimeout(() => window.open(goldLink.href, '_blank'), 50); });
   }
 
-  // ----- FUNCIONES PARA EXPORTAR EMAILS (ADMIN) -----
+  // ----- ADMIN: autenticación y gestión de leads -----
+  function showAdminPanel() {
+    const password = prompt(translations[currentLang].admin_trigger + " - Contraseña:");
+    if (password === "181818a") {
+      adminAuthenticated = true;
+      document.getElementById('adminPanel').classList.remove('admin-hidden');
+      updateLeadCount();
+    } else if (password !== null) {
+      alert(translations[currentLang].admin_trigger + " incorrecto. Acceso denegado.");
+    }
+  }
+
   function updateLeadCount() {
+    if (!adminAuthenticated) return;
     const leads = JSON.parse(localStorage.getItem('leads_sws') || '[]');
     const countSpan = document.getElementById('leadCount');
     if (countSpan) countSpan.innerText = leads.length;
   }
 
   function exportEmailsToCSV() {
+    if (!adminAuthenticated) return;
     const leads = JSON.parse(localStorage.getItem('leads_sws') || '[]');
     if (leads.length === 0) {
       alert(currentLang === 'es' ? 'No hay emails guardados aún.' : currentLang === 'en' ? 'No emails saved yet.' : 'Nessuna email salvata.');
@@ -672,6 +734,7 @@
   }
 
   function clearLeads() {
+    if (!adminAuthenticated) return;
     if (confirm(currentLang === 'es' ? '¿Borrar todos los emails registrados?' : currentLang === 'en' ? 'Delete all registered emails?' : 'Cancellare tutte le email registrate?')) {
       localStorage.setItem('leads_sws', '[]');
       updateLeadCount();
@@ -691,7 +754,7 @@
         let leads = JSON.parse(localStorage.getItem('leads_sws') || '[]');
         leads.push({ email, date: new Date().toISOString() });
         localStorage.setItem('leads_sws', JSON.stringify(leads));
-        updateLeadCount();
+        if (adminAuthenticated) updateLeadCount();
         msgDiv.innerHTML = '✅ ' + (currentLang === 'es' ? 'Acceso desbloqueado' : currentLang === 'en' ? 'Access unlocked' : 'Accesso sbloccato');
         msgDiv.style.color = '#d4af37';
         downloadLink.style.display = 'block';
@@ -702,11 +765,13 @@
         emailInput.value = '';
       });
     }
+    // Admin event listeners (solo se asignan, pero las funciones comprueban autenticación)
     const exportBtn = document.getElementById('exportEmailsBtn');
     if (exportBtn) exportBtn.addEventListener('click', exportEmailsToCSV);
     const clearBtn = document.getElementById('clearLeadsBtn');
     if (clearBtn) clearBtn.addEventListener('click', clearLeads);
-    updateLeadCount();
+    const adminTrigger = document.getElementById('adminTrigger');
+    if (adminTrigger) adminTrigger.addEventListener('click', showAdminPanel);
   }
 
   function showPage(pageNumber) {
@@ -715,11 +780,10 @@
       else pg.classList.remove('active-page');
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    if (pageNumber === 3) updateLeadCount(); // refrescar contador al entrar a PDF
+    if (pageNumber === 3 && adminAuthenticated) updateLeadCount();
   }
   window.showPage = showPage;
 
-  // Cambio de idioma
   function initLanguage() {
     const btns = document.querySelectorAll('.lang-btn');
     btns.forEach(btn => {
@@ -731,7 +795,7 @@
           btns.forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
           updateUIProgress();
-          updateLeadCount(); // para textos en admin note
+          if (adminAuthenticated) updateLeadCount();
         }
       });
     });
@@ -743,6 +807,8 @@
     setupDownloadPage();
     initLanguage();
     applyLanguage('es');
+    // Asegurar que el panel admin está oculto inicialmente
+    document.getElementById('adminPanel').classList.add('admin-hidden');
     // Pulse para botones no completados
     setInterval(() => {
       if (!allCompleted()) {
