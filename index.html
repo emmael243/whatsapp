@@ -1,58 +1,90 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Inversión Simple</title>
+<title>Premium Investment Platform</title>
 
 <style>
-body {
+
+/* ===== GLOBAL ===== */
+* {
   margin: 0;
-  font-family: Arial, sans-serif;
-  background: #0f172a;
-  color: white;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial;
 }
 
+body {
+  color: white;
+  background: #0b1220;
+  overflow-x: hidden;
+}
+
+/* ===== BACKGROUND ===== */
+.bg {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  background: url('https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1600&q=80') center/cover;
+  filter: blur(0px);
+  z-index: -2;
+}
+
+.overlay {
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.75);
+  z-index: -1;
+}
+
+/* ===== HERO ===== */
 .hero {
   text-align: center;
-  padding: 80px 20px;
-  background: linear-gradient(135deg, #1e3a8a, #0f172a);
+  padding: 90px 20px 40px;
+  animation: fadeIn 1.2s ease;
 }
 
 h1 {
-  font-size: 32px;
+  font-size: 36px;
+  letter-spacing: -1px;
 }
 
 p {
   color: #cbd5e1;
+  margin-top: 10px;
 }
 
+/* ===== BUTTONS ===== */
 .btn {
   display: inline-block;
   padding: 12px 18px;
   margin: 10px;
-  background: #2563eb;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.08);
   color: white;
   text-decoration: none;
-  border-radius: 8px;
+  backdrop-filter: blur(10px);
   transition: 0.3s;
+  border: 1px solid rgba(255,255,255,0.1);
 }
 
 .btn:hover {
-  background: #1d4ed8;
+  transform: scale(1.05);
+  background: rgba(255,255,255,0.15);
 }
 
 .primary {
-  background: #22c55e;
+  background: linear-gradient(135deg,#22c55e,#16a34a);
+  border: none;
 }
 
-.primary:hover {
-  background: #16a34a;
-}
-
+/* ===== SECTIONS ===== */
 .section {
   padding: 50px 20px;
   text-align: center;
+  animation: fadeInUp 1s ease;
 }
 
 .cards {
@@ -63,81 +95,226 @@ p {
 }
 
 .card {
-  background: #1e293b;
+  width: 260px;
   padding: 20px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* ===== EMAIL BOX ===== */
+input {
+  padding: 12px;
+  width: 260px;
   border-radius: 10px;
-  width: 250px;
+  border: none;
+  margin: 10px;
 }
 
-footer {
-  text-align: center;
-  padding: 30px;
-  background: #020617;
+/* ===== DASHBOARD ===== */
+.dashboard {
+  display: none;
+  padding: 40px;
+  background: rgba(0,0,0,0.6);
+  margin: 20px;
+  border-radius: 16px;
 }
 
-.small {
-  font-size: 14px;
-  color: #94a3b8;
+.email-list {
+  margin-top: 20px;
+  text-align: left;
 }
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeIn {
+  from {opacity:0; transform:translateY(-20px);}
+  to {opacity:1; transform:translateY(0);}
+}
+
+@keyframes fadeInUp {
+  from {opacity:0; transform:translateY(40px);}
+  to {opacity:1; transform:translateY(0);}
+}
+
 </style>
-
 </head>
 
 <body>
 
+<div class="bg"></div>
+<div class="overlay"></div>
+
 <!-- HERO -->
 <div class="hero">
-  <h1>Protege tu dinero e invierte desde Italia 🇮🇹</h1>
-  <p>Sistema simple: dólares + inversión + oro</p>
+  <h1 id="title"></h1>
+  <p id="subtitle"></p>
 
-  <a class="btn primary" href="#start">EMPEZAR AHORA</a>
+  <a class="btn primary" href="#start" id="cta1"></a>
 </div>
 
-<!-- INFO -->
+<!-- EMAIL CAPTURE -->
 <div class="section">
-  <h2>Cómo funciona</h2>
+  <h2 id="email_title"></h2>
+  <p id="email_sub"></p>
+
+  <input type="email" id="emailInput" placeholder="Email...">
+  <br>
+
+  <button class="btn primary" onclick="saveEmail()" id="saveBtn"></button>
+
+  <p id="msg"></p>
+</div>
+
+<!-- SYSTEM -->
+<div class="section">
+  <h2 id="how"></h2>
 
   <div class="cards">
 
     <div class="card">
       <h3>💵 Airtm</h3>
-      <p>Guarda dinero en dólares y mueve fondos fácil.</p>
-      <a class="btn" href="https://app.airtm.com/ivt/emmanuel23ns3b56" target="_blank">Entrar</a>
+      <p id="airtm"></p>
+      <a class="btn" href="https://app.airtm.com/ivt/emmanuel23ns3b56" target="_blank">Airtm</a>
     </div>
 
     <div class="card">
       <h3>📈 Trading212</h3>
-      <p>Invierte en acciones y ETFs desde 1€.</p>
-      <a class="btn" href="https://www.trading212.com/invite/1ATodgTwhC" target="_blank">Invertir</a>
+      <p id="trade"></p>
+      <a class="btn" href="https://www.trading212.com/invite/1ATodgTwhC" target="_blank">Trading212</a>
     </div>
 
     <div class="card">
-      <h3>🥇 Oro</h3>
-      <p>Protege tu dinero con oro digital.</p>
-      <a class="btn" href="https://www.bullionvaultaffiliate.com/EMMAEL243/it" target="_blank">Comprar oro</a>
+      <h3>🥇 Gold</h3>
+      <p id="gold"></p>
+      <a class="btn" href="https://www.bullionvaultaffiliate.com/EMMAEL243/it" target="_blank">Gold</a>
     </div>
 
   </div>
 </div>
 
-<!-- CTA FINAL -->
+<!-- CTA -->
 <div class="section" id="start">
-  <h2>¿Necesitas ayuda para empezar?</h2>
-  <p>Te guío paso a paso sin complicaciones</p>
+  <h2 id="help"></h2>
+  <p id="desc"></p>
 
-  <a class="btn primary" 
-     href="https://wa.me/393514697366" 
-     target="_blank">
-     💬 Hablar por WhatsApp
-  </a>
-
-  <p class="small">⚠️ Inversión a largo plazo, no es dinero rápido</p>
+  <a class="btn primary" href="https://wa.me/393514697366" target="_blank" id="cta2"></a>
 </div>
 
-<!-- FOOTER -->
-<footer>
-  <p>Sistema de inversión simple</p>
-</footer>
+<!-- DASHBOARD -->
+<div class="section">
+  <button class="btn" onclick="toggleDashboard()">Admin Dashboard</button>
+
+  <div class="dashboard" id="dashboard">
+    <h2>📊 Emails Capturados</h2>
+    <div class="email-list" id="emailList"></div>
+    <button class="btn" onclick="exportEmails()">Exportar</button>
+  </div>
+</div>
+
+<script>
+
+/* ===== LANGUAGE ===== */
+const lang = navigator.language.startsWith("es") ? "es" :
+             navigator.language.startsWith("it") ? "it" : "en";
+
+const t = {
+  es:{
+    title:"Banco digital de inversión inteligente",
+    subtitle:"Protege, invierte y crece tu dinero",
+    cta1:"EMPEZAR",
+    email_title:"Recibe la guía gratis",
+    email_sub:"Déjame tu email y te contacto",
+    save:"Guardar email",
+    how:"Sistema",
+    airtm:"Dólares seguros",
+    trade:"Inversión en bolsa",
+    gold:"Protección en oro",
+    help:"Habla conmigo",
+    desc:"Te ayudo paso a paso",
+    cta2:"WhatsApp"
+  },
+  it:{
+    title:"Banca digitale di investimento",
+    subtitle:"Proteggi e fai crescere il tuo denaro",
+    cta1:"INIZIA",
+    email_title:"Ricevi la guida",
+    email_sub:"Lascia la tua email",
+    save:"Salva email",
+    how:"Sistema",
+    airtm:"Dollari sicuri",
+    trade:"Investimenti",
+    gold:"Oro digitale",
+    help:"Contattami",
+    desc:"Ti guido passo passo",
+    cta2:"WhatsApp"
+  },
+  en:{
+    title:"Smart Digital Investment Bank",
+    subtitle:"Protect, invest and grow your money",
+    cta1:"START",
+    email_title:"Get free guide",
+    email_sub:"Leave your email",
+    save:"Save email",
+    how:"System",
+    airtm:"USD storage",
+    trade:"Stock investing",
+    gold:"Gold protection",
+    help:"Contact me",
+    desc:"Step-by-step help",
+    cta2:"WhatsApp"
+  }
+}[lang];
+
+/* APPLY TEXT */
+document.getElementById("title").innerText = t.title;
+document.getElementById("subtitle").innerText = t.subtitle;
+document.getElementById("cta1").innerText = t.cta1;
+document.getElementById("email_title").innerText = t.email_title;
+document.getElementById("email_sub").innerText = t.email_sub;
+document.getElementById("saveBtn").innerText = t.save;
+document.getElementById("how").innerText = t.how;
+document.getElementById("airtm").innerText = t.airtm;
+document.getElementById("trade").innerText = t.trade;
+document.getElementById("gold").innerText = t.gold;
+document.getElementById("help").innerText = t.help;
+document.getElementById("desc").innerText = t.desc;
+document.getElementById("cta2").innerText = t.cta2;
+
+/* ===== EMAIL SYSTEM ===== */
+function saveEmail(){
+  const email = document.getElementById("emailInput").value;
+  if(!email) return;
+
+  let emails = JSON.parse(localStorage.getItem("emails") || "[]");
+  emails.push(email);
+  localStorage.setItem("emails", JSON.stringify(emails));
+
+  document.getElementById("msg").innerText = "✔ Saved!";
+  document.getElementById("emailInput").value = "";
+}
+
+/* ===== DASHBOARD ===== */
+function toggleDashboard(){
+  const d = document.getElementById("dashboard");
+  d.style.display = d.style.display === "block" ? "none" : "block";
+
+  const list = document.getElementById("emailList");
+  const emails = JSON.parse(localStorage.getItem("emails") || "[]");
+
+  list.innerHTML = emails.map(e => `<div>📧 ${e}</div>`).join("");
+}
+
+function exportEmails(){
+  const emails = localStorage.getItem("emails");
+  const blob = new Blob([emails], {type:"text/plain"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "emails.txt";
+  a.click();
+}
+
+</script>
 
 </body>
-</html></html>
+</html>
