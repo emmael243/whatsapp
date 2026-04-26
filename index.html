@@ -3,36 +3,60 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Financial Funnel PRO</title>
+<title>Free Investment Guide</title>
 
 <style>
 body{
   margin:0;
-  font-family:-apple-system,BlinkMacSystemFont,Arial;
+  font-family:-apple-system,Arial;
   background:#0b1220;
   color:white;
 }
 
-/* CHAT */
-.chat{
-  max-width:500px;
+.container{
+  max-width:720px;
   margin:auto;
   padding:20px;
 }
 
-.bubble{
-  padding:12px 14px;
-  margin:10px 0;
-  border-radius:14px;
-  display:inline-block;
-  max-width:85%;
+.nav{
+  text-align:center;
+  margin-bottom:20px;
 }
 
-.bot{background:rgba(255,255,255,0.08);}
-.user{background:#2563eb; float:right;}
-.clear{clear:both;}
+.nav button{
+  background:#1e293b;
+  color:white;
+  border:none;
+  padding:10px 14px;
+  margin:5px;
+  border-radius:8px;
+  cursor:pointer;
+}
 
-/* INPUT */
+.page{display:none;}
+.active{display:block;}
+
+.card{
+  background:rgba(255,255,255,0.06);
+  padding:15px;
+  margin:10px 0;
+  border-radius:12px;
+}
+
+a.btn{
+  display:block;
+  text-align:center;
+  padding:12px;
+  margin-top:10px;
+  background:#2563eb;
+  color:white;
+  text-decoration:none;
+  border-radius:10px;
+}
+
+.whatsapp{background:#25D366;}
+
 input,button{
   width:100%;
   padding:12px;
@@ -41,228 +65,131 @@ input,button{
   border:none;
 }
 
-button{
+button.primary{
   background:#22c55e;
   color:white;
   font-weight:bold;
-}
-
-/* ADMIN PANEL */
-#adminPanel{
-  display:none;
-  position:fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  background:#000000ee;
-  padding:20px;
-  overflow:auto;
-}
-
-.box{
-  background:#111827;
-  padding:15px;
-  border-radius:10px;
-  margin-bottom:10px;
-}
-
-.smallBtn{
-  background:#3b82f6;
-  padding:8px;
-  border-radius:8px;
-  display:inline-block;
-  margin:5px;
-  cursor:pointer;
 }
 </style>
 </head>
 
 <body>
 
-<!-- CHAT -->
-<div class="chat" id="chat"></div>
+<div class="container">
 
-<div class="chat">
-  <input id="input" placeholder="Type..." />
-  <button onclick="nextStep()">Send</button>
+<!-- NAV -->
+<div class="nav">
+  <button onclick="show(1)">Home</button>
+  <button onclick="show(2)">Guide</button>
+  <button onclick="show(3)">Download</button>
 </div>
 
-<!-- 🔐 ADMIN BUTTON (hidden trigger) -->
-<div style="position:fixed;bottom:10px;left:10px;opacity:0.1">
-  <button onclick="openAdmin()">.</button>
+<!-- PAGE 1 -->
+<div id="p1" class="page active">
+
+<h1>💎 Smart Investment System</h1>
+<p>Build income from Europe safely</p>
+
+<div class="card">
+<h3>💵 Airtm</h3>
+<p>Store USD safely</p>
+<a class="btn" href="https://app.airtm.com/ivt/emmanuel23ns3b56" target="_blank">Open Airtm</a>
 </div>
 
-<!-- ADMIN PANEL -->
-<div id="adminPanel">
+<div class="card">
+<h3>📈 Trading212</h3>
+<p>Invest in stocks & ETFs</p>
+<a class="btn" href="https://www.trading212.com/invite/1ATodgTwhC" target="_blank">Start Trading</a>
+</div>
 
-  <h2>📊 ADMIN DASHBOARD</h2>
+<div class="card">
+<h3>🥇 Gold</h3>
+<p>Protect wealth with gold</p>
+<a class="btn" href="https://www.bullionvaultaffiliate.com/EMMAEL243/it" target="_blank">Buy Gold</a>
+</div>
 
-  <div class="smallBtn" onclick="exportData()">📤 Export Emails</div>
-  <div class="smallBtn" onclick="clearData()">🗑 Clear</div>
-  <div class="smallBtn" onclick="closeAdmin()">❌ Close</div>
+<a class="btn whatsapp"
+href="https://wa.me/393514697366?text=Hi%20I%20want%20to%20start"
+target="_blank">
+💬 WhatsApp Support
+</a>
 
-  <div id="dataBox"></div>
+</div>
+
+<!-- PAGE 2 -->
+<div id="p2" class="page">
+
+<h2>📘 Free Guide</h2>
+
+<div class="card">
+<b>1. Diversification</b>
+<p>Never invest in only one asset.</p>
+</div>
+
+<div class="card">
+<b>2. ETFs</b>
+<p>Long term stable investing strategy.</p>
+</div>
+
+<div class="card">
+<b>3. USD Protection</b>
+<p>Use Airtm to avoid currency risk.</p>
+</div>
+
+<div class="card">
+<b>4. Gold Hedge</b>
+<p>Protect against inflation.</p>
+</div>
+
+<a class="btn whatsapp"
+href="https://wa.me/393514697366?text=Help%20me%20with%20investing"
+target="_blank">
+💬 Talk to Me
+</a>
+
+</div>
+
+<!-- PAGE 3 -->
+<div id="p3" class="page">
+
+<h2>📩 Get Free PDF Guide</h2>
+
+<input type="email" id="email" placeholder="Enter your email">
+
+<button class="primary" onclick="save()">Unlock Download</button>
+
+<p id="msg"></p>
+
+<a id="download" class="btn" href="#" target="_blank">
+📥 Download PDF
+</a>
+
+</div>
 
 </div>
 
 <script>
 
-/* ======================
-   LANGUAGE
-====================== */
-let lang = navigator.language.startsWith("es") ? "es"
-         : navigator.language.startsWith("it") ? "it"
-         : "en";
-
-const t = {
-  es:{
-    hello:"👋 Soy tu asistente financiero",
-    ask:"¿Quieres invertir y proteger tu dinero?",
-    email:"Déjame tu email",
-    thanks:"Perfecto, ahora te contacto",
-    btn:"Ir a WhatsApp"
-  },
-  it:{
-    hello:"👋 Sono il tuo assistente finanziario",
-    ask:"Vuoi investire e proteggere il tuo denaro?",
-    email:"Lascia la tua email",
-    thanks:"Perfetto, ti contatto ora",
-    btn:"Vai su WhatsApp"
-  },
-  en:{
-    hello:"👋 I'm your financial assistant",
-    ask:"Do you want to invest and protect your money?",
-    email:"Leave your email",
-    thanks:"Perfect, I will contact you",
-    btn:"Go to WhatsApp"
-  }
-}[lang];
-
-/* ======================
-   CHAT
-====================== */
-let step=0;
-let email="";
-let interest="";
-
-function bot(msg){
-  let d=document.createElement("div");
-  d.className="bubble bot";
-  d.innerText=msg;
-  document.getElementById("chat").appendChild(d);
+/* NAV */
+function show(n){
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.getElementById("p"+n).classList.add("active");
 }
 
-function user(msg){
-  let d=document.createElement("div");
-  d.className="bubble user";
-  d.innerText=msg;
-  document.getElementById("chat").appendChild(d);
-  document.getElementById("chat").appendChild(document.createElement("div")).className="clear";
-}
+/* SAVE EMAIL */
+function save(){
+  let email=document.getElementById("email").value;
+  if(!email)return;
 
-/* INIT */
-bot(t.hello);
-setTimeout(()=>bot(t.ask),800);
+  let leads=JSON.parse(localStorage.getItem("leads")||"[]");
+  leads.push(email);
+  localStorage.setItem("leads",JSON.stringify(leads));
 
-/* ======================
-   FLOW
-====================== */
-function nextStep(){
+  document.getElementById("msg").innerText="✔ Access unlocked";
 
-  let val=document.getElementById("input").value;
-  if(!val)return;
-
-  user(val);
-  document.getElementById("input").value="";
-
-  if(step==0){
-    interest=val;
-    setTimeout(()=>bot(t.email),800);
-    step++;
-    return;
-  }
-
-  if(step==1){
-    email=val;
-
-    let leads=JSON.parse(localStorage.getItem("leads")||"[]");
-    leads.push({email,interest,date:new Date().toISOString()});
-    localStorage.setItem("leads",JSON.stringify(leads));
-
-    setTimeout(()=>bot(t.thanks),800);
-
-    setTimeout(()=>{
-      let a=document.createElement("a");
-      a.href="https://wa.me/393514697366?text=Hi%20I%20want%20to%20start%20the%20system";
-      a.innerText=t.btn;
-      a.className="bubble bot";
-      a.target="_blank";
-      document.getElementById("chat").appendChild(a);
-    },1500);
-
-    step++;
-  }
-}
-
-/* ======================
-   ADMIN ACCESS
-====================== */
-function openAdmin(){
-
-  let pass=prompt("Enter admin key:");
-
-  // 🔐 TU CLAVE AQUÍ
-  const KEY="181818a/";
-
-  if(pass!==KEY){
-    alert("Denied");
-    return;
-  }
-
-  document.getElementById("adminPanel").style.display="block";
-  loadData();
-}
-
-function closeAdmin(){
-  document.getElementById("adminPanel").style.display="none";
-}
-
-function loadData(){
-  let data=JSON.parse(localStorage.getItem("leads")||"[]");
-
-  let html="";
-
-  data.forEach((d,i)=>{
-    html+=`
-    <div class="box">
-      <b>#${i+1}</b><br>
-      📧 ${d.email}<br>
-      💡 ${d.interest}<br>
-      🕒 ${d.date}
-    </div>`;
-  });
-
-  document.getElementById("dataBox").innerHTML=html||"No data";
-}
-
-/* ======================
-   EXPORT / CLEAR
-====================== */
-function exportData(){
-  let data=localStorage.getItem("leads");
-  let blob=new Blob([data],{type:"application/json"});
-  let a=document.createElement("a");
-  a.href=URL.createObjectURL(blob);
-  a.download="leads.json";
-  a.click();
-}
-
-function clearData(){
-  if(confirm("Delete all?")){
-    localStorage.removeItem("leads");
-    loadData();
-  }
+  /* 👉 GOOGLE DRIVE LINK AQUÍ */
+  document.getElementById("download").href =
+    "https://drive.google.com/YOUR_PDF_LINK_HERE";
 }
 
 </script>
