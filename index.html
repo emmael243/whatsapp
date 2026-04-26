@@ -1,708 +1,143 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <meta name="description" content="Difusor social gratuito para compartir necesidades urgentes por WhatsApp. Ayuda a difundir mensajes de ayuda, voluntariado y donaciones.">
-    <meta name="keywords" content="difusor whatsapp, compartir necesidades, ayuda social, voluntariado, donaciones">
-    <meta name="author" content="Difusor Social WA">
-    
-    <!-- 🔥 SCRIPT DE ADSENSE - CARGAR LIBRERÍA 🔥 -->
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1400749356774119" crossorigin="anonymous"></script>
-    
-    <title>Difusor Social WA · Haz llegar tu mensaje</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inversión Simple</title>
 
-        body {
-            background: linear-gradient(135deg, #e0f2e9 0%, #c8e6df 100%);
-            font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, Roboto, sans-serif;
-            padding: 1.5rem;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #0f172a;
+  color: white;
+}
 
-        .app-container {
-            max-width: 800px;
-            width: 100%;
-            background: white;
-            border-radius: 2rem;
-            box-shadow: 0 25px 40px -12px rgba(0, 0, 0, 0.3);
-            overflow: hidden;
-            margin-bottom: 2rem;
-        }
+.hero {
+  text-align: center;
+  padding: 80px 20px;
+  background: linear-gradient(135deg, #1e3a8a, #0f172a);
+}
 
-        .header {
-            background: #075e54;
-            color: white;
-            padding: 1.5rem;
-            text-align: center;
-        }
+h1 {
+  font-size: 32px;
+}
 
-        .header h1 {
-            font-size: 1.8rem;
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
+p {
+  color: #cbd5e1;
+}
 
-        .header h1 span {
-            background: white;
-            color: #075e54;
-            padding: 0 12px;
-            border-radius: 60px;
-        }
+.btn {
+  display: inline-block;
+  padding: 12px 18px;
+  margin: 10px;
+  background: #2563eb;
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: 0.3s;
+}
 
-        .header p {
-            margin-top: 8px;
-            opacity: 0.9;
-        }
+.btn:hover {
+  background: #1d4ed8;
+}
 
-        .nav-bar {
-            background: #f4fbf9;
-            padding: 0.8rem 1.5rem;
-            border-bottom: 1px solid #cfe6e0;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1.5rem;
-            justify-content: center;
-        }
+.primary {
+  background: #22c55e;
+}
 
-        .nav-bar a {
-            color: #075e54;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 0.9rem;
-            transition: 0.2s;
-        }
+.primary:hover {
+  background: #16a34a;
+}
 
-        .nav-bar a:hover {
-            color: #25D366;
-            transform: translateY(-2px);
-        }
+.section {
+  padding: 50px 20px;
+  text-align: center;
+}
 
-        .body {
-            padding: 2rem;
-        }
+.cards {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 15px;
+}
 
-        .config-card {
-            background: #f4fbf9;
-            border-radius: 1.5rem;
-            padding: 1.2rem 1.5rem;
-            margin-bottom: 1.5rem;
-            border: 1px solid #cfe6e0;
-        }
+.card {
+  background: #1e293b;
+  padding: 20px;
+  border-radius: 10px;
+  width: 250px;
+}
 
-        .config-title {
-            font-weight: 700;
-            color: #0b4f44;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            border-left: 4px solid #25D366;
-            padding-left: 12px;
-        }
+footer {
+  text-align: center;
+  padding: 30px;
+  background: #020617;
+}
 
-        .config-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            margin-bottom: 0.8rem;
-        }
+.small {
+  font-size: 14px;
+  color: #94a3b8;
+}
+</style>
 
-        .config-field {
-            flex: 1;
-            min-width: 180px;
-        }
-
-        .config-field label {
-            display: block;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            color: #2c6e5f;
-            margin-bottom: 4px;
-        }
-
-        .config-field input, .config-field textarea {
-            width: 100%;
-            padding: 8px 12px;
-            border-radius: 60px;
-            border: 1px solid #cbdcd6;
-            font-family: inherit;
-            font-size: 0.85rem;
-            background: white;
-        }
-
-        .config-field textarea {
-            border-radius: 1rem;
-            resize: vertical;
-        }
-
-        .checkbox-field {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .checkbox-field input {
-            width: 18px;
-            height: 18px;
-        }
-
-        .need-area {
-            margin: 1.5rem 0;
-        }
-
-        .need-label {
-            font-weight: 700;
-            font-size: 1.1rem;
-            margin-bottom: 10px;
-            color: #1e3b34;
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-
-        textarea#needMessage {
-            width: 100%;
-            padding: 1rem;
-            font-size: 1rem;
-            border-radius: 1.2rem;
-            border: 2px solid #ddebe7;
-            background: #fffef7;
-            font-family: inherit;
-            resize: vertical;
-        }
-
-        textarea#needMessage:focus {
-            outline: none;
-            border-color: #25D366;
-            box-shadow: 0 0 0 3px rgba(37, 211, 102, 0.2);
-        }
-
-        .char-counter {
-            text-align: right;
-            font-size: 0.7rem;
-            color: #5f8b80;
-            margin-top: 5px;
-            margin-bottom: 1rem;
-        }
-
-        .action-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1rem;
-            margin: 1rem 0 1.5rem;
-        }
-
-        .btn {
-            flex: 1;
-            padding: 0.8rem 1rem;
-            border: none;
-            border-radius: 60px;
-            font-weight: 600;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            cursor: pointer;
-            transition: 0.2s;
-            font-family: inherit;
-            font-size: 0.95rem;
-        }
-
-        .btn-wa {
-            background: #25D366;
-            color: #1c2f2a;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-
-        .btn-wa:hover {
-            background: #20b859;
-            transform: translateY(-2px);
-        }
-
-        .btn-copy {
-            background: #eef3f1;
-            color: #075e54;
-            border: 1px solid #c4dbd4;
-        }
-
-        .btn-copy:hover {
-            background: #e2ece8;
-        }
-
-        .btn-share {
-            background: #3b5998;
-            color: white;
-            border: none;
-        }
-
-        .btn-share:hover {
-            background: #2d4373;
-            transform: translateY(-2px);
-        }
-
-        .ad-container {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 1rem;
-            padding: 0.75rem;
-            margin: 1rem 0;
-            text-align: center;
-            min-height: 100px;
-        }
-
-        .preview-box {
-            background: #f9fefc;
-            border-radius: 1.2rem;
-            padding: 1rem;
-            border-left: 4px solid #25D366;
-            margin: 1.2rem 0;
-        }
-
-        .preview-title {
-            font-size: 0.7rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            color: #0e6b58;
-            margin-bottom: 8px;
-        }
-
-        .preview-message {
-            font-size: 0.9rem;
-            color: #204e43;
-            white-space: pre-wrap;
-            word-break: break-word;
-            max-height: 100px;
-            overflow-y: auto;
-        }
-
-        .footer-actions {
-            display: flex;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-top: 1rem;
-            padding-top: 1rem;
-            border-top: 1px solid #cde3dd;
-        }
-
-        .small-btn {
-            background: none;
-            border: 1px solid #bdd9d2;
-            padding: 6px 14px;
-            border-radius: 60px;
-            font-size: 0.75rem;
-            cursor: pointer;
-            color: #1e6b5c;
-            transition: 0.2s;
-        }
-
-        .small-btn:hover {
-            background: #e0f0ec;
-        }
-
-        /* Sección del enlace del sitio (para que se vuelva masivo) */
-        .site-link-box {
-            background: #e8f5e9;
-            border-radius: 1rem;
-            padding: 1rem;
-            margin: 1rem 0;
-            text-align: center;
-            border: 1px solid #a5d6a7;
-        }
-
-        .site-link-box p {
-            font-size: 0.8rem;
-            color: #2e7d32;
-            margin-bottom: 8px;
-        }
-
-        .site-link-box a {
-            color: #075e54;
-            font-weight: bold;
-            text-decoration: none;
-            word-break: break-all;
-            font-size: 0.85rem;
-        }
-
-        .site-link-box a:hover {
-            text-decoration: underline;
-        }
-
-        .footer-note {
-            font-size: 0.7rem;
-            text-align: center;
-            color: #558b7e;
-            margin-top: 1rem;
-        }
-
-        .toast {
-            visibility: hidden;
-            position: fixed;
-            bottom: 25px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #075e54e6;
-            color: white;
-            padding: 10px 22px;
-            border-radius: 50px;
-            font-size: 0.85rem;
-            backdrop-filter: blur(6px);
-            z-index: 1000;
-            opacity: 0;
-            transition: 0.2s;
-            pointer-events: none;
-        }
-
-        .toast.show {
-            visibility: visible;
-            opacity: 1;
-        }
-
-        @media (max-width: 550px) {
-            .body {
-                padding: 1.2rem;
-            }
-            .action-buttons {
-                flex-direction: column;
-            }
-        }
-    </style>
 </head>
+
 <body>
 
-<div class="app-container">
-    <div class="header">
-        <h1>📢 Difusor <span>WA</span></h1>
-        <p>Escribe tu necesidad y compártela al instante por WhatsApp</p>
-    </div>
-    
-    <div class="nav-bar">
-        <a href="index.html">🏠 Inicio</a>
-        <a href="acerca-de.html">📖 Acerca de</a>
-        <a href="contacto.html">✉️ Contacto</a>
-        <a href="privacidad.html">🔒 Privacidad</a>
-    </div>
+<!-- HERO -->
+<div class="hero">
+  <h1>Protege tu dinero e invierte desde Italia 🇮🇹</h1>
+  <p>Sistema simple: dólares + inversión + oro</p>
 
-    <div class="body">
-        <div class="config-card">
-            <div class="config-title">
-                ⚙️ Personaliza esta herramienta
-            </div>
-            <div class="config-grid">
-                <div class="config-field">
-                    <label>Título personalizado</label>
-                    <input type="text" id="customTitle" placeholder="Ej: Ayuda Vecinal" value="Difusor Social">
-                </div>
-                <div class="config-field">
-                    <label>Teléfono fijo (opcional)</label>
-                    <input type="tel" id="fixedPhone" placeholder="ej: 521234567890">
-                </div>
-            </div>
-            <div class="checkbox-field">
-                <input type="checkbox" id="useFixedPhone">
-                <label>🔒 Usar solo este número (difusión directa)</label>
-            </div>
-            <div class="config-field">
-                <label>Mensaje de ejemplo (placeholder)</label>
-                <textarea id="examplePlaceholder" rows="2">Necesito donadores de sangre tipo O+ en el Hospital Central. Urgente, por favor compartir. Contacto: 555-1234</textarea>
-            </div>
-        </div>
-
-        <!-- BLOQUE DE ANUNCIO ADSENSE -->
-        <div class="ad-container">
-            <ins class="adsbygoogle"
-                 style="display:block"
-                 data-ad-client="ca-pub-1400749356774119"
-                 data-ad-slot="1234567890"
-                 data-ad-format="auto"
-                 data-full-width-responsive="true"></ins>
-            <script>
-                 (adsbygoogle = window.adsbygoogle || []).push({});
-            </script>
-        </div>
-
-        <!-- SECCIÓN DEL ENLACE DEL SITIO (PARA COMPARTIR Y HACERLO MASIVO) -->
-        <div class="site-link-box">
-            <p>🌐 <strong>¡Comparte esta herramienta!</strong></p>
-            <p style="font-size: 0.75rem;">Invita a otros a usar el difusor online:</p>
-            <a href="https://emmael243.github.io/whatsapp/" target="_blank">https://emmael243.github.io/whatsapp/</a>
-            <button id="copySiteLinkBtn" class="small-btn" style="margin-top: 8px; background: #25D366; color: white; border: none;">📋 Copiar enlace</button>
-        </div>
-
-        <div class="need-area">
-            <div class="need-label">
-                ✏️ Escribe tu necesidad o aviso
-            </div>
-            <textarea id="needMessage" rows="4" placeholder="Escribe aquí lo que deseas difundir..."></textarea>
-            <div class="char-counter">
-                <span id="charCount">0</span> caracteres
-            </div>
-        </div>
-
-        <div class="action-buttons">
-            <button id="shareWhatsAppBtn" class="btn btn-wa">💚 Difundir por WhatsApp</button>
-            <button id="copyMessageBtn" class="btn btn-copy">📋 Copiar mensaje</button>
-        </div>
-
-        <div class="preview-box">
-            <div class="preview-title">🔍 VISTA PREVIA DEL MENSAJE</div>
-            <div id="previewText" class="preview-message">Tu necesidad aparecerá aquí...</div>
-        </div>
-
-        <div class="footer-actions">
-            <button id="downloadHtmlBtn" class="small-btn">📥 Descargar HTML</button>
-            <button id="resetExampleBtn" class="small-btn">🔄 Restaurar ejemplo</button>
-        </div>
-        
-        <div class="footer-note">
-            💡 Al hacer clic en "Difundir por WhatsApp" se abrirá WhatsApp con el mensaje listo.<br>
-            ✅ Luego elige el contacto o grupo y envía. ¡Ayuda a que la necesidad llegue más lejos!
-        </div>
-    </div>
+  <a class="btn primary" href="#start">EMPEZAR AHORA</a>
 </div>
 
-<div id="toastMsg" class="toast">✅ Mensaje listo</div>
+<!-- INFO -->
+<div class="section">
+  <h2>Cómo funciona</h2>
 
-<script>
-    (function() {
-        const textarea = document.getElementById('needMessage');
-        const charSpan = document.getElementById('charCount');
-        const previewDiv = document.getElementById('previewText');
-        const shareBtn = document.getElementById('shareWhatsAppBtn');
-        const copyBtn = document.getElementById('copyMessageBtn');
-        const downloadBtn = document.getElementById('downloadHtmlBtn');
-        const resetBtn = document.getElementById('resetExampleBtn');
-        const copySiteLinkBtn = document.getElementById('copySiteLinkBtn');
-        const toast = document.getElementById('toastMsg');
-        
-        const customTitleInput = document.getElementById('customTitle');
-        const fixedPhoneInput = document.getElementById('fixedPhone');
-        const useFixedPhoneCheck = document.getElementById('useFixedPhone');
-        const examplePlaceholder = document.getElementById('examplePlaceholder');
+  <div class="cards">
 
-        const SITE_URL = "https://emmael243.github.io/whatsapp/";
+    <div class="card">
+      <h3>💵 Airtm</h3>
+      <p>Guarda dinero en dólares y mueve fondos fácil.</p>
+      <a class="btn" href="https://app.airtm.com/ivt/emmanuel23ns3b56" target="_blank">Entrar</a>
+    </div>
 
-        function showToast(msg, isError = false) {
-            toast.textContent = msg || (isError ? '❌ Error' : '✅ Hecho');
-            toast.style.backgroundColor = isError ? '#b33b2ce6' : '#075e54e6';
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 2500);
-        }
+    <div class="card">
+      <h3>📈 Trading212</h3>
+      <p>Invierte en acciones y ETFs desde 1€.</p>
+      <a class="btn" href="https://www.trading212.com/invite/1ATodgTwhC" target="_blank">Invertir</a>
+    </div>
 
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/[&<>]/g, function(m) {
-                if (m === '&') return '&amp;';
-                if (m === '<') return '&lt;';
-                if (m === '>') return '&gt;';
-                return m;
-            });
-        }
+    <div class="card">
+      <h3>🥇 Oro</h3>
+      <p>Protege tu dinero con oro digital.</p>
+      <a class="btn" href="https://www.bullionvaultaffiliate.com/EMMAEL243/it" target="_blank">Comprar oro</a>
+    </div>
 
-        function updatePreviewAndCounter() {
-            const raw = textarea.value;
-            charSpan.innerText = raw.length;
-            if (raw.trim() === "") {
-                previewDiv.innerHTML = "✨ Escribe tu necesidad arriba y aparecerá aquí la vista previa.";
-                previewDiv.style.fontStyle = "italic";
-                previewDiv.style.color = "#8aa99f";
-            } else {
-                previewDiv.innerHTML = escapeHtml(raw);
-                previewDiv.style.fontStyle = "normal";
-                previewDiv.style.color = "#204e43";
-            }
-        }
+  </div>
+</div>
 
-        function getCleanMessage() {
-            let msg = textarea.value.trim();
-            if (msg === "") {
-                showToast("⚠️ Escribe una necesidad antes de difundir", true);
-                return null;
-            }
-            return msg;
-        }
+<!-- CTA FINAL -->
+<div class="section" id="start">
+  <h2>¿Necesitas ayuda para empezar?</h2>
+  <p>Te guío paso a paso sin complicaciones</p>
 
-        function buildWhatsAppUrl(message) {
-            let baseUrl = "https://api.whatsapp.com/send?text=" + encodeURIComponent(message);
-            if (useFixedPhoneCheck.checked) {
-                let phone = fixedPhoneInput.value.trim();
-                if (phone) {
-                    let cleanPhone = phone.replace(/\D/g, '');
-                    if (cleanPhone.length > 0) {
-                        baseUrl = "https://api.whatsapp.com/send?phone=" + cleanPhone + "&text=" + encodeURIComponent(message);
-                    }
-                }
-            }
-            return baseUrl;
-        }
+  <a class="btn primary" 
+     href="https://wa.me/393514697366" 
+     target="_blank">
+     💬 Hablar por WhatsApp
+  </a>
 
-        function shareOnWhatsApp() {
-            const message = getCleanMessage();
-            if (!message) return;
-            const url = buildWhatsAppUrl(message);
-            try {
-                const newWin = window.open(url, '_blank');
-                if (!newWin || newWin.closed) {
-                    window.location.href = url;
-                }
-                showToast("💬 Abriendo WhatsApp... selecciona contacto o grupo", false);
-            } catch(e) {
-                showToast("No se pudo abrir WhatsApp", true);
-            }
-        }
+  <p class="small">⚠️ Inversión a largo plazo, no es dinero rápido</p>
+</div>
 
-        async function copyMessage() {
-            const message = getCleanMessage();
-            if (!message) return;
-            try {
-                await navigator.clipboard.writeText(message);
-                showToast("📋 Mensaje copiado al portapapeles", false);
-            } catch (err) {
-                const textareaTemp = document.createElement('textarea');
-                textareaTemp.value = message;
-                document.body.appendChild(textareaTemp);
-                textareaTemp.select();
-                document.execCommand('copy');
-                document.body.removeChild(textareaTemp);
-                showToast("📋 Copiado", false);
-            }
-        }
+<!-- FOOTER -->
+<footer>
+  <p>Sistema de inversión simple</p>
+</footer>
 
-        async function copySiteLink() {
-            try {
-                await navigator.clipboard.writeText(SITE_URL);
-                showToast("🔗 Enlace copiado: " + SITE_URL, false);
-            } catch (err) {
-                const textareaTemp = document.createElement('textarea');
-                textareaTemp.value = SITE_URL;
-                document.body.appendChild(textareaTemp);
-                textareaTemp.select();
-                document.execCommand('copy');
-                document.body.removeChild(textareaTemp);
-                showToast("🔗 Enlace copiado", false);
-            }
-        }
-
-        function saveConfigToLocal() {
-            const config = {
-                customTitle: customTitleInput.value,
-                fixedPhone: fixedPhoneInput.value,
-                useFixedPhone: useFixedPhoneCheck.checked,
-                examplePlaceholder: examplePlaceholder.value,
-                lastNeed: textarea.value
-            };
-            localStorage.setItem('waDiffuserConfig', JSON.stringify(config));
-        }
-
-        function loadConfigFromLocal() {
-            const saved = localStorage.getItem('waDiffuserConfig');
-            if (saved) {
-                try {
-                    const cfg = JSON.parse(saved);
-                    if (cfg.customTitle !== undefined) customTitleInput.value = cfg.customTitle;
-                    if (cfg.fixedPhone !== undefined) fixedPhoneInput.value = cfg.fixedPhone;
-                    if (cfg.useFixedPhone !== undefined) useFixedPhoneCheck.checked = cfg.useFixedPhone;
-                    if (cfg.examplePlaceholder !== undefined) examplePlaceholder.value = cfg.examplePlaceholder;
-                    if (cfg.lastNeed !== undefined) textarea.value = cfg.lastNeed;
-                    
-                    if (cfg.customTitle && cfg.customTitle.trim() !== "") {
-                        document.title = cfg.customTitle + " · Difusor WhatsApp";
-                        const headerH1 = document.querySelector('.header h1');
-                        if (headerH1) {
-                            headerH1.innerHTML = `📢 ${escapeHtml(cfg.customTitle)} <span>WA</span>`;
-                        }
-                    }
-                    updatePreviewAndCounter();
-                } catch(e) { console.warn(e); }
-            }
-            if (textarea.value === "") {
-                textarea.placeholder = examplePlaceholder.value || "Escribe tu necesidad aquí...";
-            } else {
-                textarea.placeholder = examplePlaceholder.value || "Escribe tu necesidad...";
-            }
-        }
-
-        function updateTitleFromInput() {
-            let newTitle = customTitleInput.value.trim();
-            if (newTitle === "") newTitle = "Difusor Social";
-            document.title = newTitle + " · WhatsApp Helper";
-            const headerSpan = document.querySelector('.header h1');
-            if (headerSpan) {
-                headerSpan.innerHTML = `📢 ${escapeHtml(newTitle)} <span>WA</span>`;
-            }
-            saveConfigToLocal();
-        }
-
-        function resetExample() {
-            const exampleText = "🚨 NECESIDAD URGENTE: Se busca voluntarios para llevar alimentos al comedor comunitario. Dirección: Calle Siempre Viva 123. Contactar al 555-6789. ¡Comparte!";
-            textarea.value = exampleText;
-            updatePreviewAndCounter();
-            saveConfigToLocal();
-            showToast("Ejemplo de necesidad cargado", false);
-        }
-
-        function syncPlaceholder() {
-            textarea.placeholder = examplePlaceholder.value || "Escribe tu necesidad...";
-            saveConfigToLocal();
-        }
-
-        function downloadCurrentHtml() {
-            const htmlContent = document.documentElement.outerHTML;
-            const blob = new Blob([htmlContent], { type: 'text/html' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'difusor_whatsapp_base.html';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            showToast("📁 Archivo HTML descargado", false);
-        }
-
-        textarea.addEventListener('input', () => {
-            updatePreviewAndCounter();
-            saveConfigToLocal();
-        });
-        customTitleInput.addEventListener('input', () => {
-            updateTitleFromInput();
-            saveConfigToLocal();
-        });
-        fixedPhoneInput.addEventListener('input', saveConfigToLocal);
-        useFixedPhoneCheck.addEventListener('change', saveConfigToLocal);
-        examplePlaceholder.addEventListener('input', () => {
-            syncPlaceholder();
-            saveConfigToLocal();
-        });
-
-        shareBtn.addEventListener('click', shareOnWhatsApp);
-        copyBtn.addEventListener('click', copyMessage);
-        downloadBtn.addEventListener('click', downloadCurrentHtml);
-        resetBtn.addEventListener('click', resetExample);
-        copySiteLinkBtn.addEventListener('click', copySiteLink);
-
-        loadConfigFromLocal();
-        updatePreviewAndCounter();
-        updateTitleFromInput();
-        syncPlaceholder();
-
-        window.addEventListener('beforeunload', () => {
-            saveConfigToLocal();
-        });
-    })();
-</script>
 </body>
-</html>
+</html></html>
