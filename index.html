@@ -240,6 +240,19 @@
     font-size: 0.7rem;
     opacity: 0.6;
   }
+  /* Botón admin exportar */
+  .export-btn {
+    background: #334155;
+    border: 1px solid #d4af37;
+    color: #d4af37;
+    margin-top: 20px;
+    padding: 10px;
+    font-size: 0.8rem;
+  }
+  .export-btn:hover {
+    background: #d4af37;
+    color: #0b1220;
+  }
   @media (max-width: 550px) {
     .steps-list { flex-direction: column; gap: 8px; }
     .step-item { text-align: center; }
@@ -349,7 +362,7 @@
     </a>
   </div>
 
-  <!-- PÁGINA 3: DESCARGA PDF -->
+  <!-- PÁGINA 3: DESCARGA PDF + ADMIN EXPORT -->
   <div id="page3" class="page">
     <h2><i class="fas fa-file-pdf"></i> <span data-i18n="pdf_title">Obtén tu PDF Bank-Grade</span></h2>
     <p data-i18n="pdf_subtitle">Descarga la guía completa "Smart Wealth System 2026" con diseño profesional.</p>
@@ -360,6 +373,21 @@
       <a id="downloadLink" class="btn btn-download" href="#" target="_blank" style="display: none;">
         <i class="fas fa-download"></i> <span data-i18n="download_btn_text">📥 Descargar PDF (Smart Wealth System)</span>
       </a>
+      
+      <!-- SECCIÓN ADMIN: EXPORTAR EMAILS -->
+      <div style="margin-top: 25px; border-top: 1px solid #334155; padding-top: 15px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+          <span><i class="fas fa-envelope"></i> <strong>Leads capturados:</strong> <span id="leadCount">0</span></span>
+          <button id="exportEmailsBtn" class="btn export-btn" style="width: auto; padding: 8px 20px; margin: 0;">
+            <i class="fas fa-download"></i> 📥 Descargar emails (Admin)
+          </button>
+          <button id="clearLeadsBtn" class="btn export-btn" style="width: auto; padding: 8px 20px; margin: 0; background:#4a2e2e; border-color:#a55;">
+            <i class="fas fa-trash-alt"></i> Borrar leads
+          </button>
+        </div>
+        <p style="font-size: 0.65rem; margin-top: 8px; opacity: 0.6;" data-i18n="admin_note">* Solo visible para el administrador. Exporta todos los emails registrados en CSV.</p>
+      </div>
+      
       <p style="font-size: 0.7rem; margin-top: 12px;" data-i18n="pdf_footer">*Al descargar aceptas recibir contenido educativo. Sin spam.</p>
     </div>
   </div>
@@ -411,7 +439,8 @@
       pdf_footer: "*Al descargar aceptas recibir contenido educativo. Sin spam.",
       nav_home: "Inicio",
       nav_guide: "Guía",
-      nav_pdf: "PDF"
+      nav_pdf: "PDF",
+      admin_note: "* Solo visible para el administrador. Exporta todos los emails registrados en CSV."
     },
     en: {
       title_main: "Smart Wealth System",
@@ -456,7 +485,8 @@
       pdf_footer: "*By downloading you agree to receive educational content. No spam.",
       nav_home: "Home",
       nav_guide: "Guide",
-      nav_pdf: "PDF"
+      nav_pdf: "PDF",
+      admin_note: "* Visible only to admin. Export all registered emails as CSV."
     },
     it: {
       title_main: "Smart Wealth System",
@@ -501,7 +531,8 @@
       pdf_footer: "*Scaricando accetti di ricevere contenuti educativi. Nessuno spam.",
       nav_home: "Home",
       nav_guide: "Guida",
-      nav_pdf: "PDF"
+      nav_pdf: "PDF",
+      admin_note: "* Visibile solo all'amministratore. Esporta tutte le email registrate in CSV."
     }
   };
 
@@ -510,22 +541,20 @@
   function applyLanguage(lang) {
     const t = translations[lang];
     if (!t) return;
-    // Actualizar todos los elementos con data-i18n
     document.querySelectorAll('[data-i18n]').forEach(el => {
       const key = el.getAttribute('data-i18n');
       if (t[key]) el.innerHTML = t[key];
     });
-    // Placeholder para input
     const emailInput = document.getElementById('emailInput');
     if (emailInput && t.email_placeholder) emailInput.placeholder = t.email_placeholder;
-    // Botones del nav
     const navBtns = document.querySelectorAll('.nav button');
     if (navBtns.length >= 3) {
       navBtns[0].querySelector('span').innerHTML = t.nav_home;
       navBtns[1].querySelector('span').innerHTML = t.nav_guide;
       navBtns[2].querySelector('span').innerHTML = t.nav_pdf;
     }
-    // Ajustar mensaje de progreso (no se sobreescribe si tiene mensaje dinámico, pero reiniciamos el default)
+    const adminNote = document.querySelector('[data-i18n="admin_note"]');
+    if (adminNote && t.admin_note) adminNote.innerHTML = t.admin_note;
     const progressMsgDiv = document.getElementById('progressMessage');
     if (progressMsgDiv && !allCompleted()) {
       progressMsgDiv.innerHTML = t.progress_msg_default;
@@ -534,7 +563,7 @@
     }
   }
 
-  // ----- FUNCIONES DE PASOS Y PROGRESO (mismas que antes, compatibles) -----
+  // ----- FUNCIONES DE PASOS Y PROGRESO -----
   let completedSteps = { airtm: false, trading212: false, gold: false };
   function loadProgress() {
     const saved = localStorage.getItem('sws_steps');
@@ -613,6 +642,43 @@
     if (goldLink) goldLink.addEventListener('click', (e) => { e.preventDefault(); markStep('gold', 'cardGold'); setTimeout(() => window.open(goldLink.href, '_blank'), 50); });
   }
 
+  // ----- FUNCIONES PARA EXPORTAR EMAILS (ADMIN) -----
+  function updateLeadCount() {
+    const leads = JSON.parse(localStorage.getItem('leads_sws') || '[]');
+    const countSpan = document.getElementById('leadCount');
+    if (countSpan) countSpan.innerText = leads.length;
+  }
+
+  function exportEmailsToCSV() {
+    const leads = JSON.parse(localStorage.getItem('leads_sws') || '[]');
+    if (leads.length === 0) {
+      alert(currentLang === 'es' ? 'No hay emails guardados aún.' : currentLang === 'en' ? 'No emails saved yet.' : 'Nessuna email salvata.');
+      return;
+    }
+    let csvRows = [["Email", "Fecha (UTC)"]];
+    leads.forEach(lead => {
+      csvRows.push([lead.email, lead.date]);
+    });
+    const csvContent = csvRows.map(row => row.map(cell => `"${cell}"`).join(",")).join("\n");
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.href = url;
+    link.setAttribute("download", "leads_smartwealth.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  function clearLeads() {
+    if (confirm(currentLang === 'es' ? '¿Borrar todos los emails registrados?' : currentLang === 'en' ? 'Delete all registered emails?' : 'Cancellare tutte le email registrate?')) {
+      localStorage.setItem('leads_sws', '[]');
+      updateLeadCount();
+      alert(currentLang === 'es' ? 'Leads borrados.' : currentLang === 'en' ? 'Leads deleted.' : 'Leads cancellati.');
+    }
+  }
+
   function setupDownloadPage() {
     const unlockBtn = document.getElementById('unlockBtn');
     const emailInput = document.getElementById('emailInput');
@@ -625,6 +691,7 @@
         let leads = JSON.parse(localStorage.getItem('leads_sws') || '[]');
         leads.push({ email, date: new Date().toISOString() });
         localStorage.setItem('leads_sws', JSON.stringify(leads));
+        updateLeadCount();
         msgDiv.innerHTML = '✅ ' + (currentLang === 'es' ? 'Acceso desbloqueado' : currentLang === 'en' ? 'Access unlocked' : 'Accesso sbloccato');
         msgDiv.style.color = '#d4af37';
         downloadLink.style.display = 'block';
@@ -632,8 +699,14 @@
         downloadLink.href = 'https://drive.google.com/uc?export=download&id=1ss439YTeR3SJCMZWZwz6rYZBKT-Cc52X';
         downloadLink.setAttribute('target', '_blank');
         simpleConfetti();
+        emailInput.value = '';
       });
     }
+    const exportBtn = document.getElementById('exportEmailsBtn');
+    if (exportBtn) exportBtn.addEventListener('click', exportEmailsToCSV);
+    const clearBtn = document.getElementById('clearLeadsBtn');
+    if (clearBtn) clearBtn.addEventListener('click', clearLeads);
+    updateLeadCount();
   }
 
   function showPage(pageNumber) {
@@ -642,6 +715,7 @@
       else pg.classList.remove('active-page');
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (pageNumber === 3) updateLeadCount(); // refrescar contador al entrar a PDF
   }
   window.showPage = showPage;
 
@@ -656,8 +730,8 @@
           applyLanguage(currentLang);
           btns.forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
-          // Reaplicar contador de pasos con el nuevo idioma
           updateUIProgress();
+          updateLeadCount(); // para textos en admin note
         }
       });
     });
@@ -668,7 +742,7 @@
     setupAffiliateTracking();
     setupDownloadPage();
     initLanguage();
-    applyLanguage('es'); // inicial español
+    applyLanguage('es');
     // Pulse para botones no completados
     setInterval(() => {
       if (!allCompleted()) {
