@@ -3,185 +3,265 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Financial Assistant</title>
+<title>AI Financial Funnel PRO</title>
 
 <style>
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, Arial;
-  background: #0b1220;
-  color: white;
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,Arial;
+  background:#0b1220;
+  color:white;
 }
 
-.chat {
-  max-width: 500px;
-  margin: auto;
-  padding: 20px;
+/* CHAT */
+.chat{
+  max-width:500px;
+  margin:auto;
+  padding:20px;
 }
 
-.bubble {
-  padding: 12px 14px;
-  margin: 10px 0;
-  border-radius: 14px;
-  display: inline-block;
-  max-width: 85%;
-  animation: fade 0.4s ease;
+.bubble{
+  padding:12px 14px;
+  margin:10px 0;
+  border-radius:14px;
+  display:inline-block;
+  max-width:85%;
 }
 
-.bot {
-  background: rgba(255,255,255,0.08);
+.bot{background:rgba(255,255,255,0.08);}
+.user{background:#2563eb; float:right;}
+.clear{clear:both;}
+
+/* INPUT */
+input,button{
+  width:100%;
+  padding:12px;
+  margin-top:10px;
+  border-radius:10px;
+  border:none;
 }
 
-.user {
-  background: #2563eb;
-  float: right;
+button{
+  background:#22c55e;
+  color:white;
+  font-weight:bold;
 }
 
-.clear { clear: both; }
-
-input, button {
-  width: 100%;
-  padding: 12px;
-  margin-top: 10px;
-  border-radius: 10px;
-  border: none;
+/* ADMIN PANEL */
+#adminPanel{
+  display:none;
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:#000000ee;
+  padding:20px;
+  overflow:auto;
 }
 
-button {
-  background: #22c55e;
-  color: white;
-  font-weight: bold;
-  cursor: pointer;
+.box{
+  background:#111827;
+  padding:15px;
+  border-radius:10px;
+  margin-bottom:10px;
 }
 
-.hidden { display:none; }
-
-@keyframes fade {
-  from {opacity:0; transform: translateY(10px);}
-  to {opacity:1; transform: translateY(0);}
+.smallBtn{
+  background:#3b82f6;
+  padding:8px;
+  border-radius:8px;
+  display:inline-block;
+  margin:5px;
+  cursor:pointer;
 }
 </style>
 </head>
 
 <body>
 
+<!-- CHAT -->
 <div class="chat" id="chat"></div>
 
 <div class="chat">
-
-  <input id="input" placeholder="Type here..." />
+  <input id="input" placeholder="Type..." />
   <button onclick="nextStep()">Send</button>
+</div>
+
+<!-- 🔐 ADMIN BUTTON (hidden trigger) -->
+<div style="position:fixed;bottom:10px;left:10px;opacity:0.1">
+  <button onclick="openAdmin()">.</button>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="adminPanel">
+
+  <h2>📊 ADMIN DASHBOARD</h2>
+
+  <div class="smallBtn" onclick="exportData()">📤 Export Emails</div>
+  <div class="smallBtn" onclick="clearData()">🗑 Clear</div>
+  <div class="smallBtn" onclick="closeAdmin()">❌ Close</div>
+
+  <div id="dataBox"></div>
 
 </div>
 
 <script>
 
-/* =========================
-   LANGUAGE DETECTION
-========================= */
+/* ======================
+   LANGUAGE
+====================== */
 let lang = navigator.language.startsWith("es") ? "es"
          : navigator.language.startsWith("it") ? "it"
          : "en";
 
-/* =========================
-   CHAT STATE
-========================= */
-let step = 0;
-let email = "";
-let interest = "";
-
-/* =========================
-   TEXTS
-========================= */
 const t = {
   es:{
-    hello:"👋 Hola, soy tu asistente financiero",
-    ask:"¿Quieres aprender a invertir y proteger tu dinero?",
-    email:"Perfecto. Déjame tu email para enviarte la guía",
-    thanks:"Perfecto. Ahora te conecto con un asesor",
-    btn:"Continuar en WhatsApp"
+    hello:"👋 Soy tu asistente financiero",
+    ask:"¿Quieres invertir y proteger tu dinero?",
+    email:"Déjame tu email",
+    thanks:"Perfecto, ahora te contacto",
+    btn:"Ir a WhatsApp"
   },
   it:{
-    hello:"👋 Ciao, sono il tuo assistente finanziario",
-    ask:"Vuoi imparare a investire e proteggere il tuo denaro?",
-    email:"Perfetto. Lascia la tua email",
-    thanks:"Perfetto. Ora ti collego con un consulente",
-    btn:"Continua su WhatsApp"
+    hello:"👋 Sono il tuo assistente finanziario",
+    ask:"Vuoi investire e proteggere il tuo denaro?",
+    email:"Lascia la tua email",
+    thanks:"Perfetto, ti contatto ora",
+    btn:"Vai su WhatsApp"
   },
   en:{
-    hello:"👋 Hi, I'm your financial assistant",
-    ask:"Do you want to learn how to invest and protect your money?",
-    email:"Great. Leave your email to get the guide",
-    thanks:"Perfect. Now I connect you with an advisor",
-    btn:"Continue on WhatsApp"
+    hello:"👋 I'm your financial assistant",
+    ask:"Do you want to invest and protect your money?",
+    email:"Leave your email",
+    thanks:"Perfect, I will contact you",
+    btn:"Go to WhatsApp"
   }
 }[lang];
 
-/* =========================
-   CHAT RENDER
-========================= */
+/* ======================
+   CHAT
+====================== */
+let step=0;
+let email="";
+let interest="";
+
 function bot(msg){
-  const div = document.createElement("div");
-  div.className = "bubble bot";
-  div.innerText = msg;
-  document.getElementById("chat").appendChild(div);
+  let d=document.createElement("div");
+  d.className="bubble bot";
+  d.innerText=msg;
+  document.getElementById("chat").appendChild(d);
 }
 
 function user(msg){
-  const div = document.createElement("div");
-  div.className = "bubble user";
-  div.innerText = msg;
-  document.getElementById("chat").appendChild(div);
-
-  const clear = document.createElement("div");
-  clear.className = "clear";
-  document.getElementById("chat").appendChild(clear);
+  let d=document.createElement("div");
+  d.className="bubble user";
+  d.innerText=msg;
+  document.getElementById("chat").appendChild(d);
+  document.getElementById("chat").appendChild(document.createElement("div")).className="clear";
 }
 
-/* =========================
-   INIT CHAT
-========================= */
+/* INIT */
 bot(t.hello);
-setTimeout(()=>bot(t.ask), 800);
+setTimeout(()=>bot(t.ask),800);
 
-/* =========================
+/* ======================
    FLOW
-========================= */
+====================== */
 function nextStep(){
 
-  const input = document.getElementById("input").value;
-  if(!input) return;
+  let val=document.getElementById("input").value;
+  if(!val)return;
 
-  user(input);
-  document.getElementById("input").value = "";
+  user(val);
+  document.getElementById("input").value="";
 
-  if(step === 0){
-    interest = input;
-    setTimeout(()=>bot(t.email), 800);
+  if(step==0){
+    interest=val;
+    setTimeout(()=>bot(t.email),800);
     step++;
     return;
   }
 
-  if(step === 1){
-    email = input;
+  if(step==1){
+    email=val;
 
-    // save locally
-    let data = JSON.parse(localStorage.getItem("leads") || "[]");
-    data.push({email, interest});
-    localStorage.setItem("leads", JSON.stringify(data));
+    let leads=JSON.parse(localStorage.getItem("leads")||"[]");
+    leads.push({email,interest,date:new Date().toISOString()});
+    localStorage.setItem("leads",JSON.stringify(leads));
 
-    setTimeout(()=>bot(t.thanks), 800);
+    setTimeout(()=>bot(t.thanks),800);
 
     setTimeout(()=>{
-      const wa = document.createElement("a");
-      wa.href = "https://wa.me/393514697366?text=Hi%20I%20want%20to%20start%20the%20investment%20system";
-      wa.innerText = t.btn;
-      wa.className = "bubble bot";
-      wa.target = "_blank";
-      document.getElementById("chat").appendChild(wa);
-    }, 1500);
+      let a=document.createElement("a");
+      a.href="https://wa.me/393514697366?text=Hi%20I%20want%20to%20start%20the%20system";
+      a.innerText=t.btn;
+      a.className="bubble bot";
+      a.target="_blank";
+      document.getElementById("chat").appendChild(a);
+    },1500);
 
     step++;
+  }
+}
+
+/* ======================
+   ADMIN ACCESS
+====================== */
+function openAdmin(){
+
+  let pass=prompt("Enter admin key:");
+
+  // 🔐 TU CLAVE AQUÍ
+  const KEY="181818a/";
+
+  if(pass!==KEY){
+    alert("Denied");
+    return;
+  }
+
+  document.getElementById("adminPanel").style.display="block";
+  loadData();
+}
+
+function closeAdmin(){
+  document.getElementById("adminPanel").style.display="none";
+}
+
+function loadData(){
+  let data=JSON.parse(localStorage.getItem("leads")||"[]");
+
+  let html="";
+
+  data.forEach((d,i)=>{
+    html+=`
+    <div class="box">
+      <b>#${i+1}</b><br>
+      📧 ${d.email}<br>
+      💡 ${d.interest}<br>
+      🕒 ${d.date}
+    </div>`;
+  });
+
+  document.getElementById("dataBox").innerHTML=html||"No data";
+}
+
+/* ======================
+   EXPORT / CLEAR
+====================== */
+function exportData(){
+  let data=localStorage.getItem("leads");
+  let blob=new Blob([data],{type:"application/json"});
+  let a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="leads.json";
+  a.click();
+}
+
+function clearData(){
+  if(confirm("Delete all?")){
+    localStorage.removeItem("leads");
+    loadData();
   }
 }
 
