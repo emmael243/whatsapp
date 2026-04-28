@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Auto Trading Assistant</title>
+<title>Auto Trading System Binance</title>
 
 <style>
 body { font-family: Arial; background:#020617; color:#e2e8f0; padding:20px; }
@@ -15,15 +15,13 @@ pre { background:#020617; border:1px solid #1e293b; padding:15px; border-radius:
 
 <body>
 
-<h2>📊 Auto Trading System</h2>
+<h2>📊 Auto Trading System (Binance)</h2>
 
 <select id="symbol">
-<option>BTC-USD</option>
-<option>ETH-USD</option>
-<option>EURUSD=X</option>
-<option>GBPUSD=X</option>
-<option>AAPL</option>
-<option>TSLA</option>
+<option>BTCUSDT</option>
+<option>ETHUSDT</option>
+<option>BNBUSDT</option>
+<option>SOLUSDT</option>
 </select>
 
 <button onclick="start()">START</button>
@@ -33,25 +31,25 @@ pre { background:#020617; border:1px solid #1e293b; padding:15px; border-radius:
 
 <script>
 
-let running = false;
-let intervalId;
+let running=false, intervalId;
 
 const TF = [
- {label:"5m", range:"5d", interval:"5m", weight:1},
- {label:"15m", range:"5d", interval:"15m", weight:2},
- {label:"1h", range:"1mo", interval:"60m", weight:3}
+ {label:"5m", interval:"5m", weight:1},
+ {label:"15m", interval:"15m", weight:2},
+ {label:"1h", interval:"1h", weight:3}
 ];
 
-// ========= DATA =========
-async function getData(s,r,i){
- const url=`https://query1.finance.yahoo.com/v8/finance/chart/${s}?range=${r}&interval=${i}`;
+// ========= DATA BINANCE =========
+async function getData(symbol, interval){
+ const url=`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=300`;
  const res=await fetch(url);
- const j=await res.json();
- const q=j.chart.result[0].indicators.quote[0];
+ const data=await res.json();
 
- return q.close.map((c,i)=>({
-  close:c, high:q.high[i], low:q.low[i]
- })).filter(x=>x.close);
+ return data.map(c=>({
+  high:parseFloat(c[2]),
+  low:parseFloat(c[3]),
+  close:parseFloat(c[4])
+ }));
 }
 
 // ========= INDICATORS =========
@@ -75,7 +73,7 @@ function atr(d,p=14){
  return tr.slice(-p).reduce((a,b)=>a+b)/p;
 }
 
-// ========= FRACTAL =========
+// ========= FRACTALES =========
 function fractals(d){
  let f=[];
  for(let i=2;i<d.length-2;i++){
@@ -102,6 +100,7 @@ function evaluate(d){
 
  const e50=ema(d,50), e200=ema(d,200);
  const f=fractals(d), t=turtle(d);
+
  const trend=e50.at(-1)>e200.at(-1)?"up":"down";
  const vol=atr(d);
  const price=d.at(-1).close;
@@ -176,8 +175,7 @@ async function analyze(){
  let res=[];
 
  for(let tf of TF){
-  let d=await getData(s,tf.range,tf.interval);
-  if(d.length<100) continue;
+  let d=await getData(s,tf.interval);
 
   let r=evaluate(d);
   let wr=backtest(d);
@@ -200,11 +198,11 @@ Winrate estimado: ${best.wr.toFixed(1)}%
 Tendencia: ${best.trend}
 TF: ${best.tf}
 
-Entrada actual: ${best.price.toFixed(2)}
+Entrada: ${best.price.toFixed(2)}
 Stop Loss: ${best.stop?.toFixed(2)}
 Take Profit: ${best.tp?.toFixed(2)}
 
-Actualizando cada 30s...
+Actualizando cada 20s...
 `;
 }
 
@@ -213,7 +211,7 @@ function start(){
  if(running) return;
  running=true;
  analyze();
- intervalId=setInterval(analyze,30000);
+ intervalId=setInterval(analyze,20000);
 }
 
 function stop(){
