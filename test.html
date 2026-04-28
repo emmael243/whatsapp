@@ -1,83 +1,227 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>WebRTC Test</title>
-    <style>
-        body { display: flex; flex-direction: column; align-items: center; margin: 0; padding: 0; }
-        video { width: 45%; margin: 10px; border: 1px solid black; }
-        #videos { display: flex; justify-content: center; width: 100%; }
-    </style>
+<meta charset="UTF-8">
+<title>Auto Trading Assistant</title>
+
+<style>
+body { font-family: Arial; background:#020617; color:#e2e8f0; padding:20px; }
+h2 { color:#38bdf8; }
+button, select { padding:10px; margin:5px; border-radius:8px; border:none; }
+button { background:#22c55e; font-weight:bold; }
+pre { background:#020617; border:1px solid #1e293b; padding:15px; border-radius:10px; }
+</style>
 </head>
+
 <body>
-    <h1>WebRTC Cliente HTML5</h1>
-    <div id="videos">
-        <video id="localVideo" autoplay muted playsinline></video>
-        <video id="remoteVideo" autoplay playsinline></video>
-    </div>
 
-    <script>
-        const signalingUrl = "wss://c9cc8b92-9999-4141-a186-ef5d390b338d-00-mpv778c5pccd.riker.replit.dev/ws";
-        const roomId = "mi-sala";
+<h2>📊 Auto Trading System</h2>
 
-        let localStream;
-        let pc;
-        const localVideo = document.getElementById("localVideo");
-        const remoteVideo = document.getElementById("remoteVideo");
+<select id="symbol">
+<option>BTC-USD</option>
+<option>ETH-USD</option>
+<option>EURUSD=X</option>
+<option>GBPUSD=X</option>
+<option>AAPL</option>
+<option>TSLA</option>
+</select>
 
-        const ws = new WebSocket(signalingUrl);
+<button onclick="start()">START</button>
+<button onclick="stop()">STOP</button>
 
-        ws.onopen = () => {
-            console.log("WebSocket conectado ✅");
-            ws.send(JSON.stringify({ type: "join", roomId: roomId }));
-        };
+<pre id="out">Esperando...</pre>
 
-        ws.onmessage = async (event) => {
-            const data = JSON.parse(event.data);
-            switch(data.type) {
-                case "offer":
-                    await pc.setRemoteDescription(new RTCSessionDescription({ type: "offer", sdp: data.sdp }));
-                    const answer = await pc.createAnswer();
-                    await pc.setLocalDescription(answer);
-                    ws.send(JSON.stringify({ type: "answer", sdp: answer.sdp }));
-                    break;
-                case "answer":
-                    await pc.setRemoteDescription(new RTCSessionDescription({ type: "answer", sdp: data.sdp }));
-                    break;
-                case "ice":
-                    const candidate = new RTCIceCandidate(data.candidate);
-                    await pc.addIceCandidate(candidate);
-                    break;
-            }
-        };
+<script>
 
-        async function init() {
-            localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-            localVideo.srcObject = localStream;
+let running = false;
+let intervalId;
 
-            pc = new RTCPeerConnection({
-                iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
-            });
+const TF = [
+ {label:"5m", range:"5d", interval:"5m", weight:1},
+ {label:"15m", range:"5d", interval:"15m", weight:2},
+ {label:"1h", range:"1mo", interval:"60m", weight:3}
+];
 
-            pc.onicecandidate = (event) => {
-                if (event.candidate) {
-                    ws.send(JSON.stringify({ type: "ice", candidate: event.candidate }));
-                }
-            };
+// ========= DATA =========
+async function getData(s,r,i){
+ const url=`https://query1.finance.yahoo.com/v8/finance/chart/${s}?range=${r}&interval=${i}`;
+ const res=await fetch(url);
+ const j=await res.json();
+ const q=j.chart.result[0].indicators.quote[0];
 
-            pc.ontrack = (event) => {
-                remoteVideo.srcObject = event.streams[0];
-            };
+ return q.close.map((c,i)=>({
+  close:c, high:q.high[i], low:q.low[i]
+ })).filter(x=>x.close);
+}
 
-            localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+// ========= INDICATORS =========
+function ema(d,p){
+ let k=2/(p+1), e=[d[0].close];
+ for(let i=1;i<d.length;i++){
+  e.push(d[i].close*k+e[i-1]*(1-k));
+ }
+ return e;
+}
 
-            // Crear oferta solo si eres el primer peer (opcional)
-            // const offer = await pc.createOffer();
-            // await pc.setLocalDescription(offer);
-            // ws.send(JSON.stringify({ type: "offer", sdp: offer.sdp }));
-        }
+function atr(d,p=14){
+ let tr=[];
+ for(let i=1;i<d.length;i++){
+  tr.push(Math.max(
+   d[i].high-d[i].low,
+   Math.abs(d[i].high-d[i-1].close),
+   Math.abs(d[i].low-d[i-1].close)
+  ));
+ }
+ return tr.slice(-p).reduce((a,b)=>a+b)/p;
+}
 
-        init();
-    </script>
+// ========= FRACTAL =========
+function fractals(d){
+ let f=[];
+ for(let i=2;i<d.length-2;i++){
+  if(d[i].low<d[i-1].low && d[i].low<d[i+1].low) f.push({i,type:"bull"});
+  if(d[i].high>d[i-1].high && d[i].high>d[i+1].high) f.push({i,type:"bear"});
+ }
+ return f;
+}
+
+// ========= TURTLE =========
+function turtle(d){
+ let s=[];
+ for(let i=20;i<d.length;i++){
+  let h=Math.max(...d.slice(i-20,i).map(x=>x.high));
+  let l=Math.min(...d.slice(i-20,i).map(x=>x.low));
+  if(d[i].close>h) s.push({i,type:"BUY"});
+  if(d[i].close<l) s.push({i,type:"SELL"});
+ }
+ return s;
+}
+
+// ========= STRATEGY =========
+function evaluate(d){
+
+ const e50=ema(d,50), e200=ema(d,200);
+ const f=fractals(d), t=turtle(d);
+ const trend=e50.at(-1)>e200.at(-1)?"up":"down";
+ const vol=atr(d);
+ const price=d.at(-1).close;
+
+ let score=0, action="WAIT";
+
+ t.forEach(sig=>{
+  let near=f.find(x=>Math.abs(x.i-sig.i)<3);
+
+  if(sig.type==="BUY" && near?.type==="bull" && trend==="up"){
+   score+=5; action="BUY";
+  }
+  if(sig.type==="SELL" && near?.type==="bear" && trend==="down"){
+   score+=5; action="SELL";
+  }
+ });
+
+ if(Math.abs(e50.at(-1)-e200.at(-1))/price < 0.002){
+  score=0; action="WAIT";
+ }
+
+ let stop=null,tp=null;
+
+ if(action==="BUY"){
+  stop=price-vol*1.5;
+  tp=price+vol*3;
+ }
+ if(action==="SELL"){
+  stop=price+vol*1.5;
+  tp=price-vol*3;
+ }
+
+ return {score,trend,action,stop,tp,vol,price};
+}
+
+// ========= BACKTEST =========
+function backtest(d){
+ let wins=0,loss=0;
+
+ for(let i=50;i<d.length-10;i++){
+  let r=evaluate(d.slice(0,i));
+  if(r.action==="WAIT") continue;
+
+  let future=d.slice(i,i+10);
+
+  let hitTP=false,hitSL=false;
+
+  for(let c of future){
+   if(r.action==="BUY"){
+    if(c.low<=r.stop) hitSL=true;
+    if(c.high>=r.tp) hitTP=true;
+   }
+   if(r.action==="SELL"){
+    if(c.high>=r.stop) hitSL=true;
+    if(c.low<=r.tp) hitTP=true;
+   }
+  }
+
+  if(hitTP) wins++;
+  else if(hitSL) loss++;
+ }
+
+ let total=wins+loss;
+ return total? (wins/total*100):0;
+}
+
+// ========= MAIN =========
+async function analyze(){
+
+ const s=document.getElementById("symbol").value;
+
+ let res=[];
+
+ for(let tf of TF){
+  let d=await getData(s,tf.range,tf.interval);
+  if(d.length<100) continue;
+
+  let r=evaluate(d);
+  let wr=backtest(d);
+
+  res.push({...r,tf:tf.label,weight:tf.weight,wr});
+ }
+
+ res.sort((a,b)=>(b.score*b.weight)-(a.score*a.weight));
+ let best=res[0];
+
+ let confidence=(best.score*best.weight + best.wr)/2;
+
+ document.getElementById("out").innerText=`
+Activo: ${s}
+
+ACCION: ${best.action}
+Confianza: ${confidence.toFixed(1)}%
+Winrate estimado: ${best.wr.toFixed(1)}%
+
+Tendencia: ${best.trend}
+TF: ${best.tf}
+
+Entrada actual: ${best.price.toFixed(2)}
+Stop Loss: ${best.stop?.toFixed(2)}
+Take Profit: ${best.tp?.toFixed(2)}
+
+Actualizando cada 30s...
+`;
+}
+
+// ========= CONTROL =========
+function start(){
+ if(running) return;
+ running=true;
+ analyze();
+ intervalId=setInterval(analyze,30000);
+}
+
+function stop(){
+ running=false;
+ clearInterval(intervalId);
+}
+
+</script>
+
 </body>
 </html>
