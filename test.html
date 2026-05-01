@@ -2,49 +2,64 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>AI Trading System PRO+</title>
-
+<title>HEDGE FUND AI 2.0</title>
 <style>
 body{background:#020617;color:#e2e8f0;font-family:Arial;padding:20px}
-button{padding:10px;border-radius:8px;border:none;background:#22c55e}
-pre{background:#020617;border:1px solid #1e293b;padding:15px}
-.panel{margin-top:10px;background:#0f172a;padding:10px}
+button,select{padding:10px;border-radius:8px;border:none;margin:5px}
+button{background:#22c55e;color:black;cursor:pointer}
+select{background:#0f172a;color:white}
+.panel{margin-top:10px;background:#0f172a;padding:10px;border-radius:10px}
+pre{background:#020617;border:1px solid #1e293b;padding:10px;overflow:auto}
+table{width:100%;margin-top:10px;border-collapse:collapse}
+td,th{border:1px solid #1e293b;padding:5px;font-size:12px}
 </style>
 </head>
-
 <body>
 
-<h2>🤖 Trading System PRO+ (Tracking Real)</h2>
+<h2>🤖 HEDGE FUND AI 2.0</h2>
+
+<select id="symbol">
+ <option>BTCUSDT</option>
+ <option>ETHUSDT</option>
+ <option>BNBUSDT</option>
+ <option>SOLUSDT</option>
+ <option>XRPUSDT</option>
+</select>
 
 <button onclick="start()">START</button>
 <button onclick="stop()">STOP</button>
+<button onclick="exportCSV()">EXPORT CSV</button>
 
 <div class="panel">
 Balance: <span id="bal">1000</span> $
 Trades: <span id="tr">0</span>
 Winrate: <span id="wr">0</span>%
+Score: <span id="sc">0</span>
 </div>
 
 <pre id="out"></pre>
 
+<table id="log">
+<tr><th>PAIR</th><th>TYPE</th><th>ENTRY</th><th>TP</th><th>SL</th><th>RESULT</th><th>SCORE</th></tr>
+</table>
+
 <script>
 
-let balance=1000, risk=0.01;
+let balance=1000;
 let trades=0,wins=0;
-let running=false, int;
-
+let running=false,int;
 let signals=[];
+let logData=[];
 
-// ===== DATA =====
 async function getData(tf){
- let r=await fetch(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${tf}&limit=300`);
+ let symbol=document.getElementById("symbol").value;
+ let r=await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${tf}&limit=300`);
  let d=await r.json();
  return d.map(c=>({h:+c[2],l:+c[3],c:+c[4]}));
 }
 
-// ===== INDICATORS =====
 function ema(d,p){
- let k=2/(p+1), e=[d[0].c];
+ let k=2/(p+1),e=[d[0].c];
  for(let i=1;i<d.length;i++) e.push(d[i].c*k+e[i-1]*(1-k));
  return e;
 }
@@ -52,151 +67,140 @@ function ema(d,p){
 function atr(d,p=14){
  let tr=[];
  for(let i=1;i<d.length;i++){
-  tr.push(Math.max(
-   d[i].h-d[i].l,
-   Math.abs(d[i].h-d[i-1].c),
-   Math.abs(d[i].l-d[i-1].c)
-  ));
+  tr.push(Math.max(d[i].h-d[i].l,Math.abs(d[i].h-d[i-1].c),Math.abs(d[i].l-d[i-1].c)));
  }
  return tr.slice(-p).reduce((a,b)=>a+b)/p;
 }
 
-// ===== FRACTAL =====
-function fractal(d){
+function priceAction(d){
+ let highs=d.slice(-10).map(x=>x.h);
+ let lows=d.slice(-10).map(x=>x.l);
+ let hh=highs.at(-1)>Math.max(...highs.slice(0,-1));
+ let ll=lows.at(-1)<Math.min(...lows.slice(0,-1));
+ if(hh) return "BULL";
+ if(ll) return "BEAR";
+ return "RANGE";
+}
+
+function liquiditySweep(d){
+ let last=d.at(-1);
+ let prev=d.at(-2);
+ if(last.l<prev.l && last.c>prev.l) return "BUY_SWEEP";
+ if(last.h>prev.h && last.c<prev.h) return "SELL_SWEEP";
+ return null;
+}
+
+function fvg(d){
  let i=d.length-3;
- if(d[i].l<d[i-1].l && d[i].l<d[i+1].l) return "BUY";
- if(d[i].h>d[i-1].h && d[i].h>d[i+1].h) return "SELL";
+ if(d[i].h<d[i+2].l) return "BULL_FVG";
+ if(d[i].l>d[i+2].h) return "BEAR_FVG";
  return null;
 }
 
-// ===== TURTLE =====
-function turtle(d){
- let last=d.length-1;
- let h=Math.max(...d.slice(last-20,last).map(x=>x.h));
- let l=Math.min(...d.slice(last-20,last).map(x=>x.l));
- if(d[last].c>h) return "BUY";
- if(d[last].c<l) return "SELL";
- return null;
+function scoreSignal(trend,pa,liq,fvgSig){
+ let score=0;
+ if(trend) score+=30;
+ if(pa!="RANGE") score+=20;
+ if(liq) score+=30;
+ if(fvgSig) score+=20;
+ return score;
 }
 
-// ===== STRATEGY =====
-function evaluate(d15,d1h){
+function evaluate(d){
+ let e20=ema(d,20),e50=ema(d,50),e200=ema(d,200);
 
- let e50=ema(d1h,50), e200=ema(d1h,200);
- let trend = e50.at(-1)>e200.at(-1)?"BUY":"SELL";
+ let trend=
+ e20.at(-1)>e50.at(-1)&&e50.at(-1)>e200.at(-1)?"BUY":
+ e20.at(-1)<e50.at(-1)&&e50.at(-1)<e200.at(-1)?"SELL":null;
 
- let f = fractal(d15);
- let t = turtle(d15);
+ let pa=priceAction(d);
+ let liq=liquiditySweep(d);
+ let fv=fvg(d);
 
- if(!f || !t) return null;
+ let score=scoreSignal(trend,pa,liq,fv);
+ if(score<60) return null;
 
- if(f===t && t===trend){
+ let price=d.at(-1).c;
+ let vol=atr(d);
 
-  let price=d15.at(-1).c;
-  let vol=atr(d15);
+ let stop,tp;
 
-  let stop,tp;
-
-  if(t==="BUY"){
-   stop=price-vol*1.5;
-   tp=price+vol*3;
-  }else{
-   stop=price+vol*1.5;
-   tp=price-vol*3;
-  }
-
-  return {type:t,price,stop,tp,time:Date.now()};
+ if(trend=="BUY"){
+  stop=price-vol*1.5;
+  tp=price+vol*3;
+ }else{
+  stop=price+vol*1.5;
+  tp=price-vol*3;
  }
 
- return null;
+ return {trend,price,stop,tp,score};
 }
 
-// ===== SAVE SIGNAL =====
-function saveSignal(sig){
- signals.push({...sig, status:"OPEN"});
+function save(sig){
+ signals.push({...sig,status:"OPEN"});
 }
 
-// ===== CHECK RESULT =====
-function updateSignals(data){
-
+function update(d){
  signals.forEach(s=>{
+  if(s.status!="OPEN") return;
 
-  if(s.status!=="OPEN") return;
-
-  for(let c of data){
-
-   if(s.type==="BUY"){
-    if(c.l<=s.stop){
-     s.status="LOSS";
-     trades++; balance-=10;
-    }
-    if(c.h>=s.tp){
-     s.status="WIN";
-     trades++; wins++; balance+=20;
-    }
-   }
-
-   if(s.type==="SELL"){
-    if(c.h>=s.stop){
-     s.status="LOSS";
-     trades++; balance-=10;
-    }
-    if(c.l<=s.tp){
-     s.status="WIN";
-     trades++; wins++; balance+=20;
-    }
-   }
-
+  if(s.trend=="BUY"){
+   if(d.at(-1).l<=s.stop){s.status="LOSS";trades++;balance-=10;log(s,"LOSS");}
+   if(d.at(-1).h>=s.tp){s.status="WIN";trades++;wins++;balance+=20;log(s,"WIN");}
   }
 
+  if(s.trend=="SELL"){
+   if(d.at(-1).h>=s.stop){s.status="LOSS";trades++;balance-=10;log(s,"LOSS");}
+   if(d.at(-1).l<=s.tp){s.status="WIN";trades++;wins++;balance+=20;log(s,"WIN");}
+  }
  });
-
 }
 
-// ===== MAIN =====
+function log(s,res){
+ logData.push({pair:document.getElementById("symbol").value,type:s.trend,entry:s.price,tp:s.tp,sl:s.stop,res,score:s.score});
+
+ let row=document.createElement("tr");
+ row.innerHTML=`<td>${document.getElementById("symbol").value}</td><td>${s.trend}</td><td>${s.price.toFixed(2)}</td><td>${s.tp.toFixed(2)}</td><td>${s.stop.toFixed(2)}</td><td>${res}</td><td>${s.score}</td>`;
+ document.getElementById("log").appendChild(row);
+}
+
 async function run(){
+ let d=await getData("15m");
+ let sig=evaluate(d);
+ if(sig) save(sig);
+ update(d);
 
- let d15=await getData("15m");
- let d1h=await getData("1h");
-
- let sig=evaluate(d15,d1h);
-
- if(sig){
-  saveSignal(sig);
- }
-
- updateSignals(d15.slice(-5));
-
- let wr = trades? (wins/trades*100):0;
+ let wr=trades?wins/trades*100:0;
 
  document.getElementById("bal").innerText=balance.toFixed(2);
  document.getElementById("tr").innerText=trades;
  document.getElementById("wr").innerText=wr.toFixed(1);
+ document.getElementById("sc").innerText=sig?sig.score:0;
 
  document.getElementById("out").innerText=
-`Señales activas: ${signals.length}
+ `PAIR: ${document.getElementById("symbol").value}
 
-Última señal:
-${sig? sig.type : "NINGUNA"}
-
-Winrate: ${wr.toFixed(1)}%
-`;
+LAST SIGNAL:
+${sig?sig.trend:"NONE"}
+SCORE: ${sig?sig.score:0}
+WINRATE: ${wr.toFixed(1)}%`;
 }
 
-// ===== CONTROL =====
-function start(){
- if(running) return;
- running=true;
- run();
- int=setInterval(run,20000);
-}
+function start(){if(running)return;running=true;run();int=setInterval(run,15000);}
+function stop(){running=false;clearInterval(int);}
 
-function stop(){
- running=false;
- clearInterval(int);
+function exportCSV(){
+ let csv="pair,type,entry,tp,sl,result,score\n";
+ logData.forEach(l=>csv+=`${l.pair},${l.type},${l.entry},${l.tp},${l.sl},${l.res},${l.score}\n`);
+ let blob=new Blob([csv],{type:"text/csv"});
+ let a=document.createElement("a");
+ a.href=URL.createObjectURL(blob);
+ a.download="backtest.csv";
+ a.click();
 }
 
 </script>
 
 </body>
 </html>
+
