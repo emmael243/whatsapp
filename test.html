@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>HEDGE FUND AI 2.0</title>
+<title>HEDGE FUND AI 2.0 FIXED</title>
 <style>
 body{background:#020617;color:#e2e8f0;font-family:Arial;padding:20px}
 button,select{padding:10px;border-radius:8px;border:none;margin:5px}
@@ -16,7 +16,7 @@ td,th{border:1px solid #1e293b;padding:5px;font-size:12px}
 </head>
 <body>
 
-<h2>🤖 HEDGE FUND AI 2.0</h2>
+<h2>🤖 HEDGE FUND AI 2.0 FIXED</h2>
 
 <select id="symbol">
  <option>BTCUSDT</option>
@@ -52,13 +52,19 @@ let signals=[];
 let logData=[];
 
 async function getData(tf){
+ try{
  let symbol=document.getElementById("symbol").value;
  let r=await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${tf}&limit=300`);
  let d=await r.json();
  return d.map(c=>({h:+c[2],l:+c[3],c:+c[4]}));
+ }catch(e){
+ console.log("DATA ERROR",e);
+ return [];
+ }
 }
 
 function ema(d,p){
+ if(!d.length) return [];
  let k=2/(p+1),e=[d[0].c];
  for(let i=1;i<d.length;i++) e.push(d[i].c*k+e[i-1]*(1-k));
  return e;
@@ -69,10 +75,11 @@ function atr(d,p=14){
  for(let i=1;i<d.length;i++){
   tr.push(Math.max(d[i].h-d[i].l,Math.abs(d[i].h-d[i-1].c),Math.abs(d[i].l-d[i-1].c)));
  }
- return tr.slice(-p).reduce((a,b)=>a+b)/p;
+ return tr.slice(-p).reduce((a,b)=>a+b,0)/p;
 }
 
 function priceAction(d){
+ if(d.length<10) return "RANGE";
  let highs=d.slice(-10).map(x=>x.h);
  let lows=d.slice(-10).map(x=>x.l);
  let hh=highs.at(-1)>Math.max(...highs.slice(0,-1));
@@ -83,6 +90,7 @@ function priceAction(d){
 }
 
 function liquiditySweep(d){
+ if(d.length<3) return null;
  let last=d.at(-1);
  let prev=d.at(-2);
  if(last.l<prev.l && last.c>prev.l) return "BUY_SWEEP";
@@ -91,6 +99,7 @@ function liquiditySweep(d){
 }
 
 function fvg(d){
+ if(d.length<5) return null;
  let i=d.length-3;
  if(d[i].h<d[i+2].l) return "BULL_FVG";
  if(d[i].l>d[i+2].h) return "BEAR_FVG";
@@ -101,12 +110,14 @@ function scoreSignal(trend,pa,liq,fvgSig){
  let score=0;
  if(trend) score+=30;
  if(pa!="RANGE") score+=20;
- if(liq) score+=30;
- if(fvgSig) score+=20;
+ if(liq) score+=25;
+ if(fvgSig) score+=25;
  return score;
 }
 
 function evaluate(d){
+ if(!d.length) return null;
+
  let e20=ema(d,20),e50=ema(d,50),e200=ema(d,200);
 
  let trend=
@@ -118,7 +129,10 @@ function evaluate(d){
  let fv=fvg(d);
 
  let score=scoreSignal(trend,pa,liq,fv);
- if(score<60) return null;
+
+ document.getElementById("sc").innerText=score;
+
+ if(score<40) return null;
 
  let price=d.at(-1).c;
  let vol=atr(d);
@@ -136,22 +150,22 @@ function evaluate(d){
  return {trend,price,stop,tp,score};
 }
 
-function save(sig){
- signals.push({...sig,status:"OPEN"});
-}
+function save(sig){signals.push({...sig,status:"OPEN"});}
 
 function update(d){
  signals.forEach(s=>{
   if(s.status!="OPEN") return;
 
+  let last=d.at(-1);
+
   if(s.trend=="BUY"){
-   if(d.at(-1).l<=s.stop){s.status="LOSS";trades++;balance-=10;log(s,"LOSS");}
-   if(d.at(-1).h>=s.tp){s.status="WIN";trades++;wins++;balance+=20;log(s,"WIN");}
+   if(last.l<=s.stop){s.status="LOSS";trades++;balance-=10;log(s,"LOSS");}
+   if(last.h>=s.tp){s.status="WIN";trades++;wins++;balance+=20;log(s,"WIN");}
   }
 
   if(s.trend=="SELL"){
-   if(d.at(-1).h>=s.stop){s.status="LOSS";trades++;balance-=10;log(s,"LOSS");}
-   if(d.at(-1).l<=s.tp){s.status="WIN";trades++;wins++;balance+=20;log(s,"WIN");}
+   if(last.h>=s.stop){s.status="LOSS";trades++;balance-=10;log(s,"LOSS");}
+   if(last.l<=s.tp){s.status="WIN";trades++;wins++;balance+=20;log(s,"WIN");}
   }
  });
 }
@@ -165,7 +179,10 @@ function log(s,res){
 }
 
 async function run(){
+ try{
  let d=await getData("15m");
+ if(!d.length){document.getElementById("out").innerText="NO DATA";return;}
+
  let sig=evaluate(d);
  if(sig) save(sig);
  update(d);
@@ -175,15 +192,13 @@ async function run(){
  document.getElementById("bal").innerText=balance.toFixed(2);
  document.getElementById("tr").innerText=trades;
  document.getElementById("wr").innerText=wr.toFixed(1);
- document.getElementById("sc").innerText=sig?sig.score:0;
 
  document.getElementById("out").innerText=
- `PAIR: ${document.getElementById("symbol").value}
+ `PAIR: ${document.getElementById("symbol").value}\nSIGNAL: ${sig?sig.trend:"NONE"}\nSCORE: ${sig?sig.score:0}\nWINRATE: ${wr.toFixed(1)}%`;
 
-LAST SIGNAL:
-${sig?sig.trend:"NONE"}
-SCORE: ${sig?sig.score:0}
-WINRATE: ${wr.toFixed(1)}%`;
+ }catch(e){
+ console.log("RUN ERROR",e);
+ }
 }
 
 function start(){if(running)return;running=true;run();int=setInterval(run,15000);}
