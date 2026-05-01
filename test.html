@@ -1,217 +1,222 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>HEDGE FUND AI 2.0 FIXED</title>
+<title>Auto Trading System Binance</title>
+
 <style>
-body{background:#020617;color:#e2e8f0;font-family:Arial;padding:20px}
-button,select{padding:10px;border-radius:8px;border:none;margin:5px}
-button{background:#22c55e;color:black;cursor:pointer}
-select{background:#0f172a;color:white}
-.panel{margin-top:10px;background:#0f172a;padding:10px;border-radius:10px}
-pre{background:#020617;border:1px solid #1e293b;padding:10px;overflow:auto}
-table{width:100%;margin-top:10px;border-collapse:collapse}
-td,th{border:1px solid #1e293b;padding:5px;font-size:12px}
+body { font-family: Arial; background:#020617; color:#e2e8f0; padding:20px; }
+h2 { color:#38bdf8; }
+button, select { padding:10px; margin:5px; border-radius:8px; border:none; }
+button { background:#22c55e; font-weight:bold; }
+pre { background:#020617; border:1px solid #1e293b; padding:15px; border-radius:10px; }
 </style>
 </head>
+
 <body>
 
-<h2>🤖 HEDGE FUND AI 2.0 FIXED</h2>
+<h2>📊 Auto Trading System (Binance)</h2>
 
 <select id="symbol">
- <option>BTCUSDT</option>
- <option>ETHUSDT</option>
- <option>BNBUSDT</option>
- <option>SOLUSDT</option>
- <option>XRPUSDT</option>
+<option>BTCUSDT</option>
+<option>ETHUSDT</option>
+<option>BNBUSDT</option>
+<option>SOLUSDT</option>
 </select>
 
 <button onclick="start()">START</button>
 <button onclick="stop()">STOP</button>
-<button onclick="exportCSV()">EXPORT CSV</button>
 
-<div class="panel">
-Balance: <span id="bal">1000</span> $
-Trades: <span id="tr">0</span>
-Winrate: <span id="wr">0</span>%
-Score: <span id="sc">0</span>
-</div>
-
-<pre id="out"></pre>
-
-<table id="log">
-<tr><th>PAIR</th><th>TYPE</th><th>ENTRY</th><th>TP</th><th>SL</th><th>RESULT</th><th>SCORE</th></tr>
-</table>
+<pre id="out">Esperando...</pre>
 
 <script>
 
-let balance=1000;
-let trades=0,wins=0;
-let running=false,int;
-let signals=[];
-let logData=[];
+let running=false, intervalId;
 
-async function getData(tf){
- try{
- let symbol=document.getElementById("symbol").value;
- let r=await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${tf}&limit=300`);
- let d=await r.json();
- return d.map(c=>({h:+c[2],l:+c[3],c:+c[4]}));
- }catch(e){
- console.log("DATA ERROR",e);
- return [];
- }
+const TF = [
+ {label:"5m", interval:"5m", weight:1},
+ {label:"15m", interval:"15m", weight:2},
+ {label:"1h", interval:"1h", weight:3}
+];
+
+// ========= DATA BINANCE =========
+async function getData(symbol, interval){
+ const url=`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=300`;
+ const res=await fetch(url);
+ const data=await res.json();
+
+ return data.map(c=>({
+  high:parseFloat(c[2]),
+  low:parseFloat(c[3]),
+  close:parseFloat(c[4])
+ }));
 }
 
+// ========= INDICATORS =========
 function ema(d,p){
- if(!d.length) return [];
- let k=2/(p+1),e=[d[0].c];
- for(let i=1;i<d.length;i++) e.push(d[i].c*k+e[i-1]*(1-k));
+ let k=2/(p+1), e=[d[0].close];
+ for(let i=1;i<d.length;i++){
+  e.push(d[i].close*k+e[i-1]*(1-k));
+ }
  return e;
 }
 
 function atr(d,p=14){
  let tr=[];
  for(let i=1;i<d.length;i++){
-  tr.push(Math.max(d[i].h-d[i].l,Math.abs(d[i].h-d[i-1].c),Math.abs(d[i].l-d[i-1].c)));
+  tr.push(Math.max(
+   d[i].high-d[i].low,
+   Math.abs(d[i].high-d[i-1].close),
+   Math.abs(d[i].low-d[i-1].close)
+  ));
  }
- return tr.slice(-p).reduce((a,b)=>a+b,0)/p;
+ return tr.slice(-p).reduce((a,b)=>a+b)/p;
 }
 
-function priceAction(d){
- if(d.length<10) return "RANGE";
- let highs=d.slice(-10).map(x=>x.h);
- let lows=d.slice(-10).map(x=>x.l);
- let hh=highs.at(-1)>Math.max(...highs.slice(0,-1));
- let ll=lows.at(-1)<Math.min(...lows.slice(0,-1));
- if(hh) return "BULL";
- if(ll) return "BEAR";
- return "RANGE";
+// ========= FRACTALES =========
+function fractals(d){
+ let f=[];
+ for(let i=2;i<d.length-2;i++){
+  if(d[i].low<d[i-1].low && d[i].low<d[i+1].low) f.push({i,type:"bull"});
+  if(d[i].high>d[i-1].high && d[i].high>d[i+1].high) f.push({i,type:"bear"});
+ }
+ return f;
 }
 
-function liquiditySweep(d){
- if(d.length<3) return null;
- let last=d.at(-1);
- let prev=d.at(-2);
- if(last.l<prev.l && last.c>prev.l) return "BUY_SWEEP";
- if(last.h>prev.h && last.c<prev.h) return "SELL_SWEEP";
- return null;
+// ========= TURTLE =========
+function turtle(d){
+ let s=[];
+ for(let i=20;i<d.length;i++){
+  let h=Math.max(...d.slice(i-20,i).map(x=>x.high));
+  let l=Math.min(...d.slice(i-20,i).map(x=>x.low));
+  if(d[i].close>h) s.push({i,type:"BUY"});
+  if(d[i].close<l) s.push({i,type:"SELL"});
+ }
+ return s;
 }
 
-function fvg(d){
- if(d.length<5) return null;
- let i=d.length-3;
- if(d[i].h<d[i+2].l) return "BULL_FVG";
- if(d[i].l>d[i+2].h) return "BEAR_FVG";
- return null;
-}
-
-function scoreSignal(trend,pa,liq,fvgSig){
- let score=0;
- if(trend) score+=30;
- if(pa!="RANGE") score+=20;
- if(liq) score+=25;
- if(fvgSig) score+=25;
- return score;
-}
-
+// ========= STRATEGY =========
 function evaluate(d){
- if(!d.length) return null;
 
- let e20=ema(d,20),e50=ema(d,50),e200=ema(d,200);
+ const e50=ema(d,50), e200=ema(d,200);
+ const f=fractals(d), t=turtle(d);
 
- let trend=
- e20.at(-1)>e50.at(-1)&&e50.at(-1)>e200.at(-1)?"BUY":
- e20.at(-1)<e50.at(-1)&&e50.at(-1)<e200.at(-1)?"SELL":null;
+ const trend=e50.at(-1)>e200.at(-1)?"up":"down";
+ const vol=atr(d);
+ const price=d.at(-1).close;
 
- let pa=priceAction(d);
- let liq=liquiditySweep(d);
- let fv=fvg(d);
+ let score=0, action="WAIT";
 
- let score=scoreSignal(trend,pa,liq,fv);
+ t.forEach(sig=>{
+  let near=f.find(x=>Math.abs(x.i-sig.i)<3);
 
- document.getElementById("sc").innerText=score;
+  if(sig.type==="BUY" && near?.type==="bull" && trend==="up"){
+   score+=5; action="BUY";
+  }
+  if(sig.type==="SELL" && near?.type==="bear" && trend==="down"){
+   score+=5; action="SELL";
+  }
+ });
 
- if(score<40) return null;
+ if(Math.abs(e50.at(-1)-e200.at(-1))/price < 0.002){
+  score=0; action="WAIT";
+ }
 
- let price=d.at(-1).c;
- let vol=atr(d);
+ let stop=null,tp=null;
 
- let stop,tp;
-
- if(trend=="BUY"){
+ if(action==="BUY"){
   stop=price-vol*1.5;
   tp=price+vol*3;
- }else{
+ }
+ if(action==="SELL"){
   stop=price+vol*1.5;
   tp=price-vol*3;
  }
 
- return {trend,price,stop,tp,score};
+ return {score,trend,action,stop,tp,vol,price};
 }
 
-function save(sig){signals.push({...sig,status:"OPEN"});}
+// ========= BACKTEST =========
+function backtest(d){
+ let wins=0,loss=0;
 
-function update(d){
- signals.forEach(s=>{
-  if(s.status!="OPEN") return;
+ for(let i=50;i<d.length-10;i++){
+  let r=evaluate(d.slice(0,i));
+  if(r.action==="WAIT") continue;
 
-  let last=d.at(-1);
+  let future=d.slice(i,i+10);
 
-  if(s.trend=="BUY"){
-   if(last.l<=s.stop){s.status="LOSS";trades++;balance-=10;log(s,"LOSS");}
-   if(last.h>=s.tp){s.status="WIN";trades++;wins++;balance+=20;log(s,"WIN");}
+  let hitTP=false,hitSL=false;
+
+  for(let c of future){
+   if(r.action==="BUY"){
+    if(c.low<=r.stop) hitSL=true;
+    if(c.high>=r.tp) hitTP=true;
+   }
+   if(r.action==="SELL"){
+    if(c.high>=r.stop) hitSL=true;
+    if(c.low<=r.tp) hitTP=true;
+   }
   }
 
-  if(s.trend=="SELL"){
-   if(last.h>=s.stop){s.status="LOSS";trades++;balance-=10;log(s,"LOSS");}
-   if(last.l<=s.tp){s.status="WIN";trades++;wins++;balance+=20;log(s,"WIN");}
-  }
- });
-}
-
-function log(s,res){
- logData.push({pair:document.getElementById("symbol").value,type:s.trend,entry:s.price,tp:s.tp,sl:s.stop,res,score:s.score});
-
- let row=document.createElement("tr");
- row.innerHTML=`<td>${document.getElementById("symbol").value}</td><td>${s.trend}</td><td>${s.price.toFixed(2)}</td><td>${s.tp.toFixed(2)}</td><td>${s.stop.toFixed(2)}</td><td>${res}</td><td>${s.score}</td>`;
- document.getElementById("log").appendChild(row);
-}
-
-async function run(){
- try{
- let d=await getData("15m");
- if(!d.length){document.getElementById("out").innerText="NO DATA";return;}
-
- let sig=evaluate(d);
- if(sig) save(sig);
- update(d);
-
- let wr=trades?wins/trades*100:0;
-
- document.getElementById("bal").innerText=balance.toFixed(2);
- document.getElementById("tr").innerText=trades;
- document.getElementById("wr").innerText=wr.toFixed(1);
-
- document.getElementById("out").innerText=
- `PAIR: ${document.getElementById("symbol").value}\nSIGNAL: ${sig?sig.trend:"NONE"}\nSCORE: ${sig?sig.score:0}\nWINRATE: ${wr.toFixed(1)}%`;
-
- }catch(e){
- console.log("RUN ERROR",e);
+  if(hitTP) wins++;
+  else if(hitSL) loss++;
  }
+
+ let total=wins+loss;
+ return total? (wins/total*100):0;
 }
 
-function start(){if(running)return;running=true;run();int=setInterval(run,15000);}
-function stop(){running=false;clearInterval(int);}
+// ========= MAIN =========
+async function analyze(){
 
-function exportCSV(){
- let csv="pair,type,entry,tp,sl,result,score\n";
- logData.forEach(l=>csv+=`${l.pair},${l.type},${l.entry},${l.tp},${l.sl},${l.res},${l.score}\n`);
- let blob=new Blob([csv],{type:"text/csv"});
- let a=document.createElement("a");
- a.href=URL.createObjectURL(blob);
- a.download="backtest.csv";
- a.click();
+ const s=document.getElementById("symbol").value;
+
+ let res=[];
+
+ for(let tf of TF){
+  let d=await getData(s,tf.interval);
+
+  let r=evaluate(d);
+  let wr=backtest(d);
+
+  res.push({...r,tf:tf.label,weight:tf.weight,wr});
+ }
+
+ res.sort((a,b)=>(b.score*b.weight)-(a.score*a.weight));
+ let best=res[0];
+
+ let confidence=(best.score*best.weight + best.wr)/2;
+
+ document.getElementById("out").innerText=`
+Activo: ${s}
+
+ACCION: ${best.action}
+Confianza: ${confidence.toFixed(1)}%
+Winrate estimado: ${best.wr.toFixed(1)}%
+
+Tendencia: ${best.trend}
+TF: ${best.tf}
+
+Entrada: ${best.price.toFixed(2)}
+Stop Loss: ${best.stop?.toFixed(2)}
+Take Profit: ${best.tp?.toFixed(2)}
+
+Actualizando cada 20s...
+`;
+}
+
+// ========= CONTROL =========
+function start(){
+ if(running) return;
+ running=true;
+ analyze();
+ intervalId=setInterval(analyze,20000);
+}
+
+function stop(){
+ running=false;
+ clearInterval(intervalId);
 }
 
 </script>
