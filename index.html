@@ -3,126 +3,175 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart Wealth System 2026 | VIRAL PRO</title>
+<title>Smart Wealth System 2026 VIRAL PRO</title>
+
 <style>
 body{background:#0b1220;color:#fff;font-family:Arial;padding:20px}
-.container{max-width:800px;margin:auto}
+.container{max-width:850px;margin:auto}
 .card{background:#111a2e;padding:20px;border-radius:20px;margin-top:15px}
-.btn{display:block;padding:14px;border-radius:50px;background:#d4af37;color:#000;text-align:center;font-weight:bold;margin-top:10px;text-decoration:none}
+.btn{display:block;padding:14px;border-radius:50px;background:#d4af37;color:#000;text-align:center;font-weight:bold;margin-top:10px;text-decoration:none;cursor:pointer}
 .lock{opacity:0.4;pointer-events:none}
 .shareBox{background:#1b2742;padding:15px;border-radius:15px;margin-top:15px;text-align:center}
 .counter{font-size:18px;color:#d4af37;font-weight:bold}
 .small{font-size:12px;opacity:0.7}
-.ref{color:#d4af37;font-weight:bold}
+.ref{color:#d4af37;font-weight:bold;word-break:break-all}
+.lang{display:flex;gap:10px;justify-content:flex-end}
+.lang button{background:#1b2742;border:none;color:#fff;padding:6px 12px;border-radius:20px;cursor:pointer}
+.lang button.active{background:#d4af37;color:#000}
 </style>
 </head>
+
 <body>
 
 <div class="container">
 
-<h1>💰 Smart Wealth System 2026 - VIRAL PRO</h1>
+<div class="lang">
+<button onclick="setLang('es')">ES</button>
+<button onclick="setLang('en')">EN</button>
+<button onclick="setLang('it')">IT</button>
+</div>
+
+<h1 id="title">💰 Smart Wealth System 2026</h1>
 
 <div class="shareBox">
-  <h3>🔐 Desbloqueo viral obligatorio</h3>
-  <p>Comparte el sistema para desbloquear el PDF</p>
-  <button class="btn" onclick="shareSystem()">📤 Compartir ahora</button>
-  <p id="shareStatus"></p>
-  <p class="small">Requisito: 1 share + 1 referido</p>
+<h3 id="viralTitle">🔐 Desbloqueo viral obligatorio</h3>
+<p id="viralDesc">Comparte con 3 contactos para desbloquear el PDF</p>
+<button class="btn" onclick="shareSystem()">📤 Compartir ahora</button>
+<p id="shareStatus"></p>
+<p class="small">Requisito: 3 shares + 1 referido</p>
 </div>
 
 <div class="card">
-  <h3>👥 Tu enlace de referido</h3>
-  <p class="small">Comparte este link:</p>
-  <p class="ref" id="refLink"></p>
-  <button class="btn" onclick="copyRef()">📋 Copiar link</button>
+<h3>👥 Link de referido</h3>
+<p class="ref" id="refLink"></p>
+<button class="btn" onclick="copyRef()">📋 Copiar link</button>
 </div>
 
 <div class="card">
-  <h3>📊 Sistema viral</h3>
-  <p>Visitas: <span class="counter" id="visitCount">0</span></p>
-  <p>Shares: <span class="counter" id="shareCount">0</span></p>
-  <p>Referidos: <span class="counter" id="refCount">0</span></p>
+<h3>📊 Sistema viral</h3>
+<p>Visitas: <span class="counter" id="visitCount">0</span></p>
+<p>Shares: <span class="counter" id="shareCount">0</span></p>
+<p>Referidos: <span class="counter" id="refCount">0</span></p>
 </div>
 
 <div class="card">
-  <h3>📥 PDF Premium</h3>
-  <a id="pdfBtn" class="btn lock" href="https://drive.google.com/uc?export=download&id=1ss439YTeR3SJCMZWZwz6rYZBKT-Cc52X" target="_blank">
-    Descargar PDF
-  </a>
+<h3>📥 PDF Premium</h3>
+<a id="pdfBtn" class="btn lock"
+href="https://drive.google.com/uc?export=download&id=1ss439YTeR3SJCMZWZwz6rYZBKT-Cc52X"
+target="_blank">
+Descargar PDF
+</a>
 </div>
 
 </div>
 
 <script>
+// ---------------- LANGUAGE ----------------
+const langData = {
+es:{
+title:"💰 Smart Wealth System 2026",
+viralTitle:"🔐 Desbloqueo viral obligatorio",
+viralDesc:"Comparte con 3 contactos para desbloquear el PDF"
+},
+en:{
+title:"💰 Smart Wealth System 2026",
+viralTitle:"🔐 Viral unlock required",
+viralDesc:"Share with 3 contacts to unlock PDF"
+},
+it:{
+title:"💰 Smart Wealth System 2026",
+viralTitle:"🔐 Sblocco virale obbligatorio",
+viralDesc:"Condividi con 3 contatti per sbloccare il PDF"
+}
+};
+
+function setLang(l){
+localStorage.setItem("lang",l);
+applyLang();
+}
+
+function applyLang(){
+let l = localStorage.getItem("lang")||"es";
+document.getElementById("title").innerText = langData[l].title;
+document.getElementById("viralTitle").innerText = langData[l].viralTitle;
+document.getElementById("viralDesc").innerText = langData[l].viralDesc;
+}
+applyLang();
+
 // ---------------- REF SYSTEM ----------------
 const urlParams = new URLSearchParams(window.location.search);
 let ref = urlParams.get("ref") || "none";
 
-// generar link propio
-const myRef = Math.random().toString(36).substring(2,8);
-document.getElementById("refLink").innerText = window.location.origin + window.location.pathname + "?ref=" + myRef;
+let myRef = localStorage.getItem("myRef");
+if(!myRef){
+myRef = Math.random().toString(36).substring(2,8);
+localStorage.setItem("myRef",myRef);
+}
 
-// guardar referidos
+document.getElementById("refLink").innerText =
+window.location.origin + window.location.pathname + "?ref=" + myRef;
+
+// refs storage
 let refs = JSON.parse(localStorage.getItem("refs")||"{}");
 if(!refs[myRef]) refs[myRef]=0;
-localStorage.setItem("myRef", myRef);
 
-// si entra con ref
-if(ref !== "none" && refs[ref] !== undefined){
-  refs[ref] += 1;
-  localStorage.setItem("refs", JSON.stringify(refs));
+// incoming referral
+if(ref !== "none"){
+if(!refs[ref]) refs[ref]=0;
+refs[ref]++;
+localStorage.setItem("refs",JSON.stringify(refs));
 }
 
+// ---------------- STATS ----------------
 function updateStats(){
-  let visits = localStorage.getItem("visits")||0;
-  let shares = localStorage.getItem("shares")||0;
-  let myRef = localStorage.getItem("myRef");
-  let refs = JSON.parse(localStorage.getItem("refs")||"{}");
+let visits = parseInt(localStorage.getItem("visits")||"0");
+let shares = parseInt(localStorage.getItem("shares")||"0");
+let refs = JSON.parse(localStorage.getItem("refs")||"{}");
 
-  document.getElementById("visitCount").innerText = ++visits;
-  localStorage.setItem("visits", visits);
+visits++;
+localStorage.setItem("visits",visits);
 
-  document.getElementById("shareCount").innerText = shares;
-  document.getElementById("refCount").innerText = refs[myRef]||0;
+document.getElementById("visitCount").innerText = visits;
+document.getElementById("shareCount").innerText = shares;
+document.getElementById("refCount").innerText = refs[myRef]||0;
 
-  if(shares>=1 && (refs[myRef]>=1)){
-    document.getElementById("pdfBtn").classList.remove("lock");
-  }
+// unlock condition (VIRAL CORE)
+if(shares>=3 && (refs[myRef]>=1)){
+document.getElementById("pdfBtn").classList.remove("lock");
 }
+}
+updateStats();
 
-// ---------------- SHARE ----------------
+// ---------------- SHARE SYSTEM ----------------
 function shareSystem(){
-  let url = window.location.href + "?ref=" + localStorage.getItem("myRef");
+let url = window.location.href + "?ref=" + myRef;
 
-  if(navigator.share){
-    navigator.share({
-      title:"Smart Wealth System",
-      text:"Accede a este sistema financiero",
-      url:url
-    }).then(()=>{
-      let s = localStorage.getItem("shares")||0;
-      s++;
-      localStorage.setItem("shares",s);
-      document.getElementById("shareStatus").innerText="✅ Share registrado";
-      updateStats();
-    });
-  } else {
-    navigator.clipboard.writeText(url);
-    let s = localStorage.getItem("shares")||0;
-    s++;
-    localStorage.setItem("shares",s);
-    document.getElementById("shareStatus").innerText="📋 Link copiado + share contado";
-    updateStats();
-  }
+if(navigator.share){
+navigator.share({
+title:"Smart Wealth System",
+text:"Accede al sistema financiero",
+url:url
+}).then(()=>{
+let s = parseInt(localStorage.getItem("shares")||"0");
+s++;
+localStorage.setItem("shares",s);
+document.getElementById("shareStatus").innerText="✅ Share registrado";
+updateStats();
+});
+}else{
+navigator.clipboard.writeText(url);
+let s = parseInt(localStorage.getItem("shares")||"0");
+s++;
+localStorage.setItem("shares",s);
+document.getElementById("shareStatus").innerText="📋 Copiado + share contado";
+updateStats();
+}
 }
 
 function copyRef(){
-  let link = document.getElementById("refLink").innerText;
-  navigator.clipboard.writeText(link);
-  alert("Link copiado");
+navigator.clipboard.writeText(document.getElementById("refLink").innerText);
+alert("Link copiado");
 }
-
-updateStats();
 </script>
 
 </body>
