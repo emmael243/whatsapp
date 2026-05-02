@@ -29,6 +29,7 @@ h1{text-align:center}
   font-weight:bold;
   margin-top:10px;
   text-decoration:none;
+  cursor:pointer;
 }
 
 .lock{opacity:0.4;pointer-events:none}
@@ -58,9 +59,8 @@ h1{text-align:center}
 
 <h1>💰 Smart Wealth System 2026 PRO</h1>
 
-  <div class="card">
+<div class="card">
   <h3>🎥 Explicación del sistema</h3>
-
   <div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:15px;">
     <iframe 
       src="https://www.youtube.com/embed/hKp82CRdbBQ?autoplay=1&mute=1&controls=1&rel=0"
@@ -69,19 +69,16 @@ h1{text-align:center}
       allowfullscreen>
     </iframe>
   </div>
-
   <p class="small">📊 Mira cómo funciona el sistema antes de empezar</p>
 </div>
 
-<!-- ================= VIRAL SYSTEM ================= -->
+<!-- SISTEMA VIRAL -->
 <div class="shareBox">
-  <h2>🔐 Sistema Viral de Desbloqueo</h2>
-  <p>Debes compartir para activar el PDF premium</p>
+  <h2>🔐 Desbloqueo rápido</h2>
+  <p>🔥 Comparte en WhatsApp para activar el PDF automáticamente</p>
 
-  <button class="btn" onclick="shareSystem()">📤 Compartir sistema</button>
+  <button class="btn" onclick="shareSystem()">📤 Compartir en WhatsApp</button>
   <p id="shareStatus"></p>
-
-  <p class="small">✔ Requisito: 1 share + 1 referido</p>
 </div>
 
 <div class="card">
@@ -91,13 +88,12 @@ h1{text-align:center}
 </div>
 
 <div class="card">
-  <h3>📊 Estadísticas virales</h3>
+  <h3>📊 Estadísticas</h3>
   <p>Visitas: <span class="counter" id="visitCount">0</span></p>
   <p>Shares: <span class="counter" id="shareCount">0</span></p>
-  <p>Referidos: <span class="counter" id="refCount">0</span></p>
 </div>
 
-<!-- ================= 3 PASOS ================= -->
+<!-- PASOS -->
 <div class="card">
   <h2>🚀 PASO 1</h2>
   <p>💵 Airtm - USD estable</p>
@@ -116,7 +112,7 @@ h1{text-align:center}
   <a class="btn" href="https://www.bullionvaultaffiliate.com/EMMAEL243/it" target="_blank">Comprar Oro</a>
 </div>
 
-<!-- ================= PDF ================= -->
+<!-- PDF -->
 <div class="card">
   <h2>📥 PDF PREMIUM</h2>
 
@@ -126,14 +122,14 @@ h1{text-align:center}
     Descargar PDF
   </a>
 
-  <p class="small">🔒 Se desbloquea con viralización</p>
+  <p class="small">🔒 Se desbloquea al compartir</p>
 </div>
 
 </div>
 
 <script>
 
-// ================= REF SYSTEM =================
+// REF
 const urlParams = new URLSearchParams(window.location.search);
 let ref = urlParams.get("ref") || "none";
 
@@ -144,71 +140,57 @@ if(!myRef){
   localStorage.setItem("myRef", myRef);
 }
 
-// mostrar link
-document.getElementById("refLink").innerText =
-window.location.origin + window.location.pathname + "?ref=" + myRef;
+// generar link limpio
+const baseUrl = window.location.origin + window.location.pathname;
+const myLink = baseUrl + "?ref=" + myRef;
 
-// base refs
-let refs = JSON.parse(localStorage.getItem("refs")||"{}");
-if(!refs[myRef]) refs[myRef]=0;
-
-// registrar referido
-if(ref !== "none" && refs[ref] !== undefined){
-  refs[ref] += 1;
-  localStorage.setItem("refs", JSON.stringify(refs));
-}
+document.getElementById("refLink").innerText = myLink;
 
 // visitas
 let visits = parseInt(localStorage.getItem("visits")||"0");
 visits++;
 localStorage.setItem("visits", visits);
 
-// ================= UI =================
+// actualizar UI
 function update(){
   let shares = parseInt(localStorage.getItem("shares")||"0");
-  let refs = JSON.parse(localStorage.getItem("refs")||"{}");
 
   document.getElementById("visitCount").innerText = visits;
   document.getElementById("shareCount").innerText = shares;
-  document.getElementById("refCount").innerText = refs[myRef]||0;
 
-  // desbloqueo PDF
-  if(shares >= 1 && (refs[myRef] >= 1)){
+  // desbloqueo simple
+  if(shares >= 1){
     document.getElementById("pdfBtn").classList.remove("lock");
-    document.getElementById("pdfBtn").innerHTML = "📥 Descargar PDF (DESBLOQUEADO)";
+    document.getElementById("pdfBtn").innerHTML = "📥 Descargar PDF (ACTIVO)";
   }
 }
 
-// ================= SHARE =================
+// SHARE
 function shareSystem(){
 
-  let url = window.location.href + "?ref=" + myRef;
+  let message = encodeURIComponent(
+    "🚀 Mira este sistema para generar ingresos:\n" + myLink
+  );
 
-  if(navigator.share){
-    navigator.share({
-      title:"Smart Wealth System",
-      text:"Accede al sistema financiero",
-      url:url
-    }).then(()=>{
-      let s = parseInt(localStorage.getItem("shares")||"0");
-      s++;
-      localStorage.setItem("shares", s);
-      document.getElementById("shareStatus").innerHTML = "<span class='ok'>✅ Share registrado</span>";
-      update();
-    });
+  // abrir WhatsApp
+  window.open("https://wa.me/?text=" + message, "_blank");
 
-  } else {
-    navigator.clipboard.writeText(url);
+  // contar share automáticamente
+  setTimeout(()=>{
     let s = parseInt(localStorage.getItem("shares")||"0");
     s++;
     localStorage.setItem("shares", s);
-    document.getElementById("shareStatus").innerHTML = "📋 Link copiado + share contado";
+
+    document.getElementById("shareStatus").innerHTML =
+      "<span class='ok'>✅ WhatsApp abierto - PDF desbloqueado</span>";
+
     update();
-  }
+  }, 1200);
 }
 
+// copiar link
 function copyRef(){
-  navigator.clipboard.writeText(document.getElementById("refLink").innerText);
+  navigator.clipboard.writeText(myLink);
   alert("Link copiado");
 }
 
