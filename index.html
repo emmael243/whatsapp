@@ -3,32 +3,50 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart Wealth Guided System</title>
+<title>Smart Wealth TikTok Funnel</title>
 
 <style>
 body{
+  margin:0;
   background:#0b1220;
   color:#fff;
   font-family:Arial;
-  padding:20px;
+  overflow-x:hidden;
 }
 
-.container{max-width:900px;margin:auto}
+#progress{
+  position:fixed;
+  top:0;
+  left:0;
+  height:5px;
+  width:0%;
+  background:#d4af37;
+  z-index:999;
+  transition:0.3s;
+}
+
+.container{
+  max-width:600px;
+  margin:auto;
+  padding:20px;
+}
 
 .card{
   background:#111a2e;
-  padding:20px;
-  border-radius:18px;
-  margin-top:15px;
+  padding:25px;
+  border-radius:20px;
+  margin:120px 0;
   border:1px solid #2a3a55;
-  transition:0.4s;
+  opacity:0.3;
+  transform:scale(0.95);
+  transition:0.5s;
 }
 
-/* 🔥 efecto activo */
 .active{
+  opacity:1;
+  transform:scale(1.05);
   border:2px solid #d4af37;
-  transform:scale(1.02);
-  box-shadow:0 0 25px rgba(212,175,55,0.4);
+  box-shadow:0 0 30px rgba(212,175,55,0.4);
 }
 
 .btn{
@@ -40,110 +58,226 @@ body{
   text-align:center;
   font-weight:bold;
   margin-top:10px;
-  cursor:pointer;
   text-decoration:none;
+  cursor:pointer;
 }
 
-h1{text-align:center}
+.startBtn{
+  position:fixed;
+  bottom:20px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:999;
+}
+
+.speaking{
+  animation:pulse 1s infinite;
+}
+
+@keyframes pulse{
+  0%{box-shadow:0 0 0 0 rgba(212,175,55,0.5);}
+  70%{box-shadow:0 0 0 15px rgba(212,175,55,0);}
+  100%{box-shadow:0 0 0 0 rgba(212,175,55,0);}
+}
+
+.lock{opacity:0.4;pointer-events:none}
 
 .small{font-size:12px;opacity:0.7}
+
+h1{text-align:center}
 </style>
 </head>
 
 <body>
 
+<div id="progress"></div>
+
 <div class="container">
 
-<h1>💰 Sistema Guiado Smart Wealth</h1>
+<h1>💰 Smart Wealth TikTok Funnel</h1>
+<p class="small">🔥 Sistema guiado automático tipo video</p>
 
-<button class="btn" onclick="startGuide()">▶ Iniciar explicación guiada</button>
+<button class="btn startBtn" onclick="start()">▶ Iniciar video</button>
 
-<!-- ================= PASO 1 ================= -->
-<div class="card" id="step1">
-  <h2>💵 PASO 1 - Airtm</h2>
+<!-- ================= STEPS ================= -->
+<div class="card" id="s1">
+  <h2>💵 Paso 1 - Airtm</h2>
   <p>Guarda tu dinero en dólares digitales de forma segura.</p>
   <a class="btn" href="https://app.airtm.com/ivt/emmanuel23ns3b56" target="_blank">Abrir Airtm</a>
 </div>
 
-<!-- ================= PASO 2 ================= -->
-<div class="card" id="step2">
-  <h2>📈 PASO 2 - Trading 212</h2>
-  <p>Invierte en ETFs y acciones globales desde una sola app.</p>
+<div class="card" id="s2">
+  <h2>📈 Paso 2 - Trading 212</h2>
+  <p>Invierte en ETFs y acciones globales fácilmente.</p>
   <a class="btn" href="https://www.trading212.com/invite/1ATodgTwhC" target="_blank">Abrir Trading212</a>
 </div>
 
-<!-- ================= PASO 3 ================= -->
-<div class="card" id="step3">
-  <h2>🥇 PASO 3 - BullionVault</h2>
-  <p>Protege tu dinero comprando oro físico real almacenado.</p>
+<div class="card" id="s3">
+  <h2>🥇 Paso 3 - Oro</h2>
+  <p>Protege tu dinero con oro real almacenado.</p>
   <a class="btn" href="https://www.bullionvaultaffiliate.com/EMMAEL243/it" target="_blank">Abrir BullionVault</a>
+</div>
+
+<!-- ================= VIRAL ================= -->
+<div class="card" id="viral">
+  <h2>🔥 Desbloqueo del PDF</h2>
+
+  <p class="small">Comparte para desbloquear el sistema</p>
+
+  <button class="btn" onclick="shareNow()">📤 Compartir en WhatsApp</button>
+
+  <p id="shareStatus"></p>
+
+  <hr style="margin:15px 0;opacity:0.2">
+
+  <h3>👥 Tu link</h3>
+  <p class="small" id="refLink"></p>
+
+  <button class="btn" onclick="copyLink()">📋 Copiar link</button>
+</div>
+
+<!-- PDF -->
+<div class="card">
+  <h2>📥 PDF PREMIUM</h2>
+
+  <a id="pdfBtn" class="btn lock"
+     href="https://drive.google.com/uc?export=download&id=1ss439YTeR3SJCMZWZwz6rYZBKT-Cc52X"
+     target="_blank">
+    Descargar PDF
+  </a>
+
+  <p class="small">🔒 Se desbloquea al compartir</p>
 </div>
 
 </div>
 
 <script>
 
-// 🔊 textos por paso
+// ================= TIKTOK FLOW =================
 const steps = [
 {
-  id:"step1",
-  text:"Paso uno. Usa Airtm para guardar tu dinero en dólares digitales de forma segura y estable."
+  id:"s1",
+  text:"Paso uno. Usa Airtm para guardar tu dinero en dólares digitales de forma segura."
 },
 {
-  id:"step2",
-  text:"Paso dos. Con Trading 212 puedes invertir en ETFs y acciones globales fácilmente desde tu móvil."
+  id:"s2",
+  text:"Paso dos. Con Trading 212 puedes invertir en ETFs y acciones globales desde tu móvil."
 },
 {
-  id:"step3",
-  text:"Paso tres. BullionVault te permite comprar oro real como protección de tu dinero a largo plazo."
+  id:"s3",
+  text:"Paso tres. Protege tu dinero con oro físico usando BullionVault."
 }
 ];
 
-let current = 0;
+let index = 0;
 
-// 🚀 función principal
-function startGuide(){
-  current = 0;
-  speakStep(current);
+// ================= START =================
+function start(){
+  index = 0;
+  speakStep();
 }
 
-// 🔥 hablar paso a paso
-function speakStep(i){
+// ================= VOICE + FLOW =================
+function speakStep(){
 
-  if(i >= steps.length){
-    clearHighlights();
+  if(index >= steps.length){
+    updateProgress(100);
     return;
   }
 
-  clearHighlights();
+  clearAll();
 
-  let step = steps[i];
-  let element = document.getElementById(step.id);
+  let step = steps[index];
+  let el = document.getElementById(step.id);
 
-  // activar visual
-  element.classList.add("active");
+  el.classList.add("active");
+  el.scrollIntoView({behavior:"smooth", block:"center"});
 
-  // voz
+  updateProgress((index/steps.length)*100);
+
   let speech = new SpeechSynthesisUtterance(step.text);
   speech.lang = "es-ES";
-  speech.rate = 1;
+  speech.rate = 1.05;
+
+  el.classList.add("speaking");
 
   speech.onend = () => {
-    setTimeout(()=>{
-      speakStep(i + 1);
-    }, 800);
+    el.classList.remove("speaking");
+    index++;
+    setTimeout(speakStep, 900);
   };
 
   window.speechSynthesis.cancel();
   window.speechSynthesis.speak(speech);
 }
 
-// 🔥 limpiar efectos
-function clearHighlights(){
+// ================= RESET =================
+function clearAll(){
   document.querySelectorAll(".card").forEach(c=>{
     c.classList.remove("active");
+    c.classList.remove("speaking");
   });
 }
+
+// ================= PROGRESS =================
+function updateProgress(p){
+  document.getElementById("progress").style.width = p + "%";
+}
+
+// ================= REF SYSTEM =================
+let myRef = localStorage.getItem("myRef");
+
+if(!myRef){
+  myRef = Math.random().toString(36).substring(2,8);
+  localStorage.setItem("myRef", myRef);
+}
+
+const baseUrl = window.location.origin + window.location.pathname;
+const myLink = baseUrl + "?ref=" + myRef;
+
+document.getElementById("refLink").innerText = myLink;
+
+// ================= SHARE =================
+function shareNow(){
+
+  let msg = encodeURIComponent(
+    "🚀 Mira este sistema:\n" + myLink
+  );
+
+  window.open("https://wa.me/?text=" + msg, "_blank");
+
+  setTimeout(()=>{
+    let s = parseInt(localStorage.getItem("shares")||"0");
+    s++;
+    localStorage.setItem("shares", s);
+
+    document.getElementById("shareStatus").innerHTML =
+      "✅ Compartido - PDF desbloqueado";
+
+    unlockPDF();
+  }, 1200);
+}
+
+// ================= UNLOCK PDF =================
+function unlockPDF(){
+  document.getElementById("pdfBtn").classList.remove("lock");
+  document.getElementById("pdfBtn").innerHTML =
+    "📥 Descargar PDF (ACTIVO)";
+}
+
+// ================= COPY =================
+function copyLink(){
+  navigator.clipboard.writeText(myLink);
+  alert("Link copiado");
+}
+
+// auto unlock
+window.onload = () => {
+  let shares = parseInt(localStorage.getItem("shares")||"0");
+  if(shares > 0){
+    unlockPDF();
+  }
+};
 
 </script>
 
