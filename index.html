@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Global Wealth Startup Pro</title>
+<title>Global Wealth Funnel Pro</title>
 
 <style>
 body{
@@ -21,6 +21,7 @@ body{
   width:0%;
   background:#d4af37;
   z-index:999;
+  transition:0.3s;
 }
 
 .container{
@@ -56,8 +57,8 @@ body{
   text-align:center;
   font-weight:bold;
   margin-top:10px;
-  cursor:pointer;
   text-decoration:none;
+  cursor:pointer;
 }
 
 .startBtn{
@@ -78,8 +79,11 @@ body{
   100%{box-shadow:0 0 0 0 rgba(212,175,55,0);}
 }
 
-h1{text-align:center}
+.lock{opacity:0.4;pointer-events:none}
+
 .small{font-size:12px;opacity:0.7;text-align:center}
+
+h1{text-align:center}
 </style>
 </head>
 
@@ -89,95 +93,137 @@ h1{text-align:center}
 
 <div class="container">
 
-<h1>🚀 Global Wealth Startup Pro</h1>
-<p class="small">Sistema educativo + inversión paso a paso</p>
+<h1>🚀 Global Wealth Funnel Pro</h1>
+<p class="small">Sistema educativo + inversión + conversión</p>
 
 <button class="btn startBtn" onclick="start()">▶ Iniciar guía</button>
 
 <!-- ================= AIRTM ================= -->
 <div class="card" id="s1">
-  <h2>💵 Airtm — Ventajas + Uso</h2>
-
+  <h2>💵 Airtm</h2>
   <p><b>Ventajas:</b></p>
-  <p>• Protección contra inflación en tu moneda local</p>
-  <p>• Conversión a dólares digitales</p>
-  <p>• Transferencias globales rápidas</p>
+  <p>• Protección contra inflación</p>
+  <p>• USD digital estable</p>
+  <p>• Transferencias globales</p>
 
-  <p><b>Operación exitosa:</b></p>
+  <p><b>Proceso:</b></p>
   <p>1. Crear cuenta</p>
   <p>2. Verificar identidad</p>
-  <p>3. Depositar dinero local</p>
-  <p>4. Convertir a USD digitales</p>
+  <p>3. Depositar dinero</p>
+  <p>4. Convertir a USD</p>
 
   <a class="btn" href="https://app.airtm.com/ivt/emmanuel23ns3b56" target="_blank">Abrir Airtm</a>
 </div>
 
 <!-- ================= TRADING ================= -->
 <div class="card" id="s2">
-  <h2>📈 Trading 212 — Inversión global</h2>
-
+  <h2>📈 Trading 212</h2>
   <p><b>Ventajas:</b></p>
-  <p>• Inversión en ETFs globales</p>
-  <p>• Acciones de empresas reales</p>
-  <p>• Sin comisiones de compra básica</p>
+  <p>• ETFs globales</p>
+  <p>• Acciones reales</p>
+  <p>• Crecimiento a largo plazo</p>
 
-  <p><b>Operación exitosa:</b></p>
+  <p><b>Proceso:</b></p>
   <p>1. Abrir cuenta</p>
   <p>2. Depositar fondos</p>
-  <p>3. Elegir ETF o acción</p>
-  <p>4. Invertir a largo plazo</p>
+  <p>3. Elegir activo</p>
+  <p>4. Invertir</p>
 
   <a class="btn" href="https://www.trading212.com/invite/1ATodgTwhC" target="_blank">Abrir Trading212</a>
 </div>
 
 <!-- ================= ORO ================= -->
 <div class="card" id="s3">
-  <h2>🥇 BullionVault — Oro real</h2>
-
+  <h2>🥇 BullionVault</h2>
   <p><b>Ventajas:</b></p>
-  <p>• Oro físico real almacenado en bóvedas</p>
-  <p>• Protección contra crisis económicas</p>
-  <p>• Diversificación de patrimonio</p>
+  <p>• Oro físico real</p>
+  <p>• Protección económica</p>
+  <p>• Diversificación</p>
 
-  <p><b>Operación exitosa:</b></p>
+  <p><b>Proceso:</b></p>
   <p>1. Crear cuenta</p>
   <p>2. Depositar fondos</p>
-  <p>3. Comprar oro en gramos</p>
-  <p>4. Mantener como reserva de valor</p>
+  <p>3. Comprar oro</p>
+  <p>4. Mantener reserva</p>
 
   <a class="btn" href="https://www.bullionvaultaffiliate.com/EMMAEL243/it" target="_blank">Abrir BullionVault</a>
+</div>
+
+<!-- ================= PDF ================= -->
+<div class="card" id="s4">
+  <h2>📥 Guía Completa</h2>
+
+  <p>Descarga el sistema completo paso a paso.</p>
+
+  <a id="pdfBtn" class="btn lock"
+     href="https://drive.google.com/uc?export=download&id=1ss439YTeR3SJCMZWZwz6rYZBKT-Cc52X"
+     target="_blank">
+    Descargar PDF
+  </a>
+
+  <p class="small">🔒 Se desbloquea con interacción</p>
+</div>
+
+<!-- ================= VIRAL ================= -->
+<div class="card" id="viral">
+  <h2>🔥 Viral System</h2>
+
+  <button class="btn" onclick="shareNow()">📤 Compartir en WhatsApp</button>
+
+  <p id="shareStatus"></p>
+
+  <h3>👥 Tu link</h3>
+  <p class="small" id="refLink"></p>
+
+  <button class="btn" onclick="copyLink()">📋 Copiar link</button>
 </div>
 
 </div>
 
 <script>
 
+// ================= FUNNEL DATA =================
 const steps = [
 {
   id:"s1",
-  text:"Airtm te permite proteger tu dinero convirtiéndolo en dólares digitales. Es clave para evitar pérdida de valor en tu moneda local."
+  text:"Airtm te permite proteger tu dinero convirtiéndolo en dólares digitales seguros."
 },
 {
   id:"s2",
-  text:"Trading 212 te da acceso a mercados globales. Puedes invertir en empresas y ETFs con crecimiento a largo plazo."
+  text:"Trading 212 te da acceso a mercados globales para invertir en crecimiento a largo plazo."
 },
 {
   id:"s3",
-  text:"BullionVault te permite comprar oro real como protección contra inflación y crisis económicas globales."
+  text:"BullionVault te permite comprar oro físico como protección contra crisis económicas."
+},
+{
+  id:"s4",
+  text:"Aquí puedes descargar la guía completa con todo el sistema explicado paso a paso."
 }
 ];
 
 let index = 0;
 
+// ================= TRACKING =================
+let funnel = {
+  start: 0,
+  steps: parseInt(localStorage.getItem("steps")||"0"),
+  shares: parseInt(localStorage.getItem("shares")||"0")
+};
+
+// ================= START =================
 function start(){
+  funnel.start++;
   index = 0;
   speakStep();
 }
 
+// ================= FLOW =================
 function speakStep(){
 
   if(index >= steps.length){
     updateProgress(100);
+    unlockPDF();
     return;
   }
 
@@ -199,6 +245,10 @@ function speakStep(){
 
   speech.onend = () => {
     el.classList.remove("speaking");
+
+    funnel.steps++;
+    localStorage.setItem("steps", funnel.steps);
+
     index++;
     setTimeout(speakStep, 900);
   };
@@ -207,18 +257,72 @@ function speakStep(){
   window.speechSynthesis.speak(speech);
 }
 
+// ================= RESET =================
 function clearAll(){
   document.querySelectorAll(".card").forEach(c=>{
     c.classList.remove("active","speaking");
   });
 }
 
+// ================= PROGRESS =================
 function updateProgress(p){
   document.getElementById("progress").style.width = p + "%";
 }
+
+// ================= REF =================
+let myRef = localStorage.getItem("myRef");
+
+if(!myRef){
+  myRef = Math.random().toString(36).substring(2,8);
+  localStorage.setItem("myRef", myRef);
+}
+
+const link = window.location.origin + window.location.pathname + "?ref=" + myRef;
+document.getElementById("refLink").innerText = link;
+
+// ================= SHARE =================
+function shareNow(){
+
+  let msg = encodeURIComponent("🚀 Sistema financiero:\n" + link);
+
+  window.open("https://wa.me/?text=" + msg, "_blank");
+
+  setTimeout(()=>{
+    funnel.shares++;
+    localStorage.setItem("shares", funnel.shares);
+
+    document.getElementById("shareStatus").innerHTML =
+      "✅ Acción registrada";
+
+    unlockPDF();
+  },1200);
+}
+
+// ================= UNLOCK =================
+function unlockPDF(){
+
+  if(funnel.shares >= 1 && funnel.steps >= 3){
+
+    document.getElementById("pdfBtn").classList.remove("lock");
+    document.getElementById("pdfBtn").innerHTML =
+      "📥 Descargar PDF (DESBLOQUEADO)";
+  }
+}
+
+// ================= COPY =================
+function copyLink(){
+  navigator.clipboard.writeText(link);
+  alert("Link copiado");
+}
+
+// ================= AUTO =================
+window.onload = () => {
+  if(parseInt(localStorage.getItem("shares")||"0") > 0){
+    unlockPDF();
+  }
+};
 
 </script>
 
 </body>
 </html>
-
