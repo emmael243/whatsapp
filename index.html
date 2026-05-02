@@ -3,19 +3,32 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart Wealth System 2026 PRO VIRAL</title>
+<title>Smart Wealth Guided System</title>
 
 <style>
-body{background:#0b1220;color:#fff;font-family:Arial;padding:20px}
-.container{max-width:850px;margin:auto}
-h1{text-align:center}
+body{
+  background:#0b1220;
+  color:#fff;
+  font-family:Arial;
+  padding:20px;
+}
+
+.container{max-width:900px;margin:auto}
 
 .card{
   background:#111a2e;
   padding:20px;
-  border-radius:20px;
+  border-radius:18px;
   margin-top:15px;
   border:1px solid #2a3a55;
+  transition:0.4s;
+}
+
+/* 🔥 efecto activo */
+.active{
+  border:2px solid #d4af37;
+  transform:scale(1.02);
+  box-shadow:0 0 25px rgba(212,175,55,0.4);
 }
 
 .btn{
@@ -27,31 +40,13 @@ h1{text-align:center}
   text-align:center;
   font-weight:bold;
   margin-top:10px;
-  text-decoration:none;
   cursor:pointer;
+  text-decoration:none;
 }
 
-.lock{opacity:0.4;pointer-events:none}
+h1{text-align:center}
+
 .small{font-size:12px;opacity:0.7}
-.counter{color:#d4af37;font-weight:bold;font-size:18px}
-.ref{color:#d4af37;font-weight:bold;word-break:break-all}
-
-.shareBox{
-  background:#1b2742;
-  padding:15px;
-  border-radius:15px;
-  margin-top:15px;
-  text-align:center;
-  border:1px solid #2a3a55;
-}
-
-.ok{color:#25D366;font-weight:bold}
-
-select{
-  padding:10px;
-  border-radius:10px;
-  margin-top:10px;
-}
 </style>
 </head>
 
@@ -59,178 +54,96 @@ select{
 
 <div class="container">
 
-<h1>💰 Smart Wealth System 2026 PRO</h1>
+<h1>💰 Sistema Guiado Smart Wealth</h1>
 
-<!-- SELECTOR IDIOMA -->
-<div class="card">
-  <h3>🌍 Idioma</h3>
-  <select id="langSelect" onchange="changeLang()">
-    <option value="es">Español</option>
-    <option value="en">English</option>
-    <option value="it">Italiano</option>
-  </select>
+<button class="btn" onclick="startGuide()">▶ Iniciar explicación guiada</button>
 
-  <button class="btn" onclick="startVoice()">🔊 Escuchar explicación</button>
+<!-- ================= PASO 1 ================= -->
+<div class="card" id="step1">
+  <h2>💵 PASO 1 - Airtm</h2>
+  <p>Guarda tu dinero en dólares digitales de forma segura.</p>
+  <a class="btn" href="https://app.airtm.com/ivt/emmanuel23ns3b56" target="_blank">Abrir Airtm</a>
 </div>
 
-<!-- VIDEO COMENTADO -->
-<!--
-<div class="card">
-  <h3>🎥 Explicación del sistema</h3>
-  <iframe src="https://www.youtube.com/embed/hKp82CRdbBQ"></iframe>
-</div>
--->
-
-<!-- SHARE -->
-<div class="shareBox">
-  <h2>🔐 Desbloqueo rápido</h2>
-  <p>🔥 Comparte para activar el PDF</p>
-  <button class="btn" onclick="shareSystem()">📤 Compartir en WhatsApp</button>
-  <p id="shareStatus"></p>
+<!-- ================= PASO 2 ================= -->
+<div class="card" id="step2">
+  <h2>📈 PASO 2 - Trading 212</h2>
+  <p>Invierte en ETFs y acciones globales desde una sola app.</p>
+  <a class="btn" href="https://www.trading212.com/invite/1ATodgTwhC" target="_blank">Abrir Trading212</a>
 </div>
 
-<!-- REF -->
-<div class="card">
-  <h3>👥 Tu link</h3>
-  <p class="ref" id="refLink"></p>
-  <button class="btn" onclick="copyRef()">📋 Copiar link</button>
-</div>
-
-<!-- STATS -->
-<div class="card">
-  <h3>📊 Estadísticas</h3>
-  <p>Visitas: <span class="counter" id="visitCount">0</span></p>
-  <p>Shares: <span class="counter" id="shareCount">0</span></p>
-</div>
-
-<!-- PASOS -->
-<div class="card">
-  <h2>🚀 PASO 1</h2>
-  <a class="btn" href="https://app.airtm.com/ivt/emmanuel23ns3b56" target="_blank">Airtm</a>
-</div>
-
-<div class="card">
-  <h2>📈 PASO 2</h2>
-  <a class="btn" href="https://www.trading212.com/invite/1ATodgTwhC" target="_blank">Trading212</a>
-</div>
-
-<div class="card">
-  <h2>🥇 PASO 3</h2>
-  <a class="btn" href="https://www.bullionvaultaffiliate.com/EMMAEL243/it" target="_blank">BullionVault</a>
-</div>
-
-<!-- PDF -->
-<div class="card">
-  <h2>📥 PDF PREMIUM</h2>
-  <a id="pdfBtn" class="btn lock"
-     href="https://drive.google.com/uc?export=download&id=1ss439YTeR3SJCMZWZwz6rYZBKT-Cc52X"
-     target="_blank">
-    Descargar PDF
-  </a>
+<!-- ================= PASO 3 ================= -->
+<div class="card" id="step3">
+  <h2>🥇 PASO 3 - BullionVault</h2>
+  <p>Protege tu dinero comprando oro físico real almacenado.</p>
+  <a class="btn" href="https://www.bullionvaultaffiliate.com/EMMAEL243/it" target="_blank">Abrir BullionVault</a>
 </div>
 
 </div>
 
 <script>
 
-// ================= LANG TEXT =================
-let lang = "es";
+// 🔊 textos por paso
+const steps = [
+{
+  id:"step1",
+  text:"Paso uno. Usa Airtm para guardar tu dinero en dólares digitales de forma segura y estable."
+},
+{
+  id:"step2",
+  text:"Paso dos. Con Trading 212 puedes invertir en ETFs y acciones globales fácilmente desde tu móvil."
+},
+{
+  id:"step3",
+  text:"Paso tres. BullionVault te permite comprar oro real como protección de tu dinero a largo plazo."
+}
+];
 
-const texts = {
-  es: `Si estás buscando una forma simple de generar ingresos online.
-  Este sistema tiene tres pasos.
-  Usa Airtm para guardar dinero en dólares.
-  Invierte en ETFs con Trading 212.
-  Protege tu dinero con oro.
-  Descarga el PDF gratis compartiendo.`,
+let current = 0;
 
-  en: `If you want a simple way to make money online.
-  This system has three steps.
-  Use Airtm to store dollars.
-  Invest in ETFs with Trading 212.
-  Protect your money with gold.
-  Download the free PDF by sharing.`,
+// 🚀 función principal
+function startGuide(){
+  current = 0;
+  speakStep(current);
+}
 
-  it: `Se vuoi guadagnare online facilmente.
-  Questo sistema ha tre passi.
-  Usa Airtm per salvare in dollari.
-  Investi in ETF con Trading 212.
-  Proteggi il denaro con oro.
-  Scarica il PDF gratis condividendo.`
-};
+// 🔥 hablar paso a paso
+function speakStep(i){
 
-// ================= VOICE =================
-function startVoice(){
+  if(i >= steps.length){
+    clearHighlights();
+    return;
+  }
 
-  const speech = new SpeechSynthesisUtterance(texts[lang]);
+  clearHighlights();
 
-  speech.lang = lang === "es" ? "es-ES" : lang === "it" ? "it-IT" : "en-US";
+  let step = steps[i];
+  let element = document.getElementById(step.id);
+
+  // activar visual
+  element.classList.add("active");
+
+  // voz
+  let speech = new SpeechSynthesisUtterance(step.text);
+  speech.lang = "es-ES";
   speech.rate = 1;
+
+  speech.onend = () => {
+    setTimeout(()=>{
+      speakStep(i + 1);
+    }, 800);
+  };
 
   window.speechSynthesis.cancel();
   window.speechSynthesis.speak(speech);
 }
 
-// ================= LANG CHANGE =================
-function changeLang(){
-  lang = document.getElementById("langSelect").value;
+// 🔥 limpiar efectos
+function clearHighlights(){
+  document.querySelectorAll(".card").forEach(c=>{
+    c.classList.remove("active");
+  });
 }
-
-// ================= REF =================
-let myRef = localStorage.getItem("myRef");
-if(!myRef){
-  myRef = Math.random().toString(36).substring(2,8);
-  localStorage.setItem("myRef", myRef);
-}
-
-const baseUrl = window.location.origin + window.location.pathname;
-const myLink = baseUrl + "?ref=" + myRef;
-document.getElementById("refLink").innerText = myLink;
-
-// ================= VISITS =================
-let visits = parseInt(localStorage.getItem("visits")||"0");
-visits++;
-localStorage.setItem("visits", visits);
-
-// ================= UPDATE =================
-function update(){
-  let shares = parseInt(localStorage.getItem("shares")||"0");
-
-  document.getElementById("visitCount").innerText = visits;
-  document.getElementById("shareCount").innerText = shares;
-
-  if(shares >= 1){
-    document.getElementById("pdfBtn").classList.remove("lock");
-    document.getElementById("pdfBtn").innerHTML = "📥 Descargar PDF (ACTIVO)";
-  }
-}
-
-// ================= SHARE =================
-function shareSystem(){
-
-  let message = encodeURIComponent("🚀 " + myLink);
-
-  window.open("https://wa.me/?text=" + message, "_blank");
-
-  setTimeout(()=>{
-    let s = parseInt(localStorage.getItem("shares")||"0");
-    s++;
-    localStorage.setItem("shares", s);
-
-    document.getElementById("shareStatus").innerHTML =
-      "<span class='ok'>✅ Compartido - PDF desbloqueado</span>";
-
-    update();
-  }, 1200);
-}
-
-// ================= COPY =================
-function copyRef(){
-  navigator.clipboard.writeText(myLink);
-  alert("Link copiado");
-}
-
-update();
 
 </script>
 
