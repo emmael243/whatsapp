@@ -8,7 +8,6 @@
 <style>
 body{background:#0b1220;color:#fff;font-family:Arial;padding:20px}
 .container{max-width:850px;margin:auto}
-
 h1{text-align:center}
 
 .card{
@@ -33,11 +32,8 @@ h1{text-align:center}
 }
 
 .lock{opacity:0.4;pointer-events:none}
-
 .small{font-size:12px;opacity:0.7}
-
 .counter{color:#d4af37;font-weight:bold;font-size:18px}
-
 .ref{color:#d4af37;font-weight:bold;word-break:break-all}
 
 .shareBox{
@@ -50,6 +46,12 @@ h1{text-align:center}
 }
 
 .ok{color:#25D366;font-weight:bold}
+
+select{
+  padding:10px;
+  border-radius:10px;
+  margin-top:10px;
+}
 </style>
 </head>
 
@@ -59,34 +61,42 @@ h1{text-align:center}
 
 <h1>💰 Smart Wealth System 2026 PRO</h1>
 
+<!-- SELECTOR IDIOMA -->
 <div class="card">
-  <h3>🎥 Explicación del sistema</h3>
-  <div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:15px;">
-    <iframe 
-      src="https://www.youtube.com/embed/hKp82CRdbBQ?autoplay=1&mute=1&controls=1&rel=0"
-      style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;"
-      allow="autoplay; encrypted-media"
-      allowfullscreen>
-    </iframe>
-  </div>
-  <p class="small">📊 Mira cómo funciona el sistema antes de empezar</p>
+  <h3>🌍 Idioma</h3>
+  <select id="langSelect" onchange="changeLang()">
+    <option value="es">Español</option>
+    <option value="en">English</option>
+    <option value="it">Italiano</option>
+  </select>
+
+  <button class="btn" onclick="startVoice()">🔊 Escuchar explicación</button>
 </div>
 
-<!-- SISTEMA VIRAL -->
+<!-- VIDEO COMENTADO -->
+<!--
+<div class="card">
+  <h3>🎥 Explicación del sistema</h3>
+  <iframe src="https://www.youtube.com/embed/hKp82CRdbBQ"></iframe>
+</div>
+-->
+
+<!-- SHARE -->
 <div class="shareBox">
   <h2>🔐 Desbloqueo rápido</h2>
-  <p>🔥 Comparte en WhatsApp para activar el PDF automáticamente</p>
-
+  <p>🔥 Comparte para activar el PDF</p>
   <button class="btn" onclick="shareSystem()">📤 Compartir en WhatsApp</button>
   <p id="shareStatus"></p>
 </div>
 
+<!-- REF -->
 <div class="card">
-  <h3>👥 Tu link de referido</h3>
+  <h3>👥 Tu link</h3>
   <p class="ref" id="refLink"></p>
   <button class="btn" onclick="copyRef()">📋 Copiar link</button>
 </div>
 
+<!-- STATS -->
 <div class="card">
   <h3>📊 Estadísticas</h3>
   <p>Visitas: <span class="counter" id="visitCount">0</span></p>
@@ -96,99 +106,125 @@ h1{text-align:center}
 <!-- PASOS -->
 <div class="card">
   <h2>🚀 PASO 1</h2>
-  <p>💵 Airtm - USD estable</p>
-  <a class="btn" href="https://app.airtm.com/ivt/emmanuel23ns3b56" target="_blank">Abrir Airtm</a>
+  <a class="btn" href="https://app.airtm.com/ivt/emmanuel23ns3b56" target="_blank">Airtm</a>
 </div>
 
 <div class="card">
   <h2>📈 PASO 2</h2>
-  <p>Trading212 - Inversión ETFs</p>
-  <a class="btn" href="https://www.trading212.com/invite/1ATodgTwhC" target="_blank">Abrir Trading212</a>
+  <a class="btn" href="https://www.trading212.com/invite/1ATodgTwhC" target="_blank">Trading212</a>
 </div>
 
 <div class="card">
   <h2>🥇 PASO 3</h2>
-  <p>Oro - BullionVault</p>
-  <a class="btn" href="https://www.bullionvaultaffiliate.com/EMMAEL243/it" target="_blank">Comprar Oro</a>
+  <a class="btn" href="https://www.bullionvaultaffiliate.com/EMMAEL243/it" target="_blank">BullionVault</a>
 </div>
 
 <!-- PDF -->
 <div class="card">
   <h2>📥 PDF PREMIUM</h2>
-
   <a id="pdfBtn" class="btn lock"
      href="https://drive.google.com/uc?export=download&id=1ss439YTeR3SJCMZWZwz6rYZBKT-Cc52X"
      target="_blank">
     Descargar PDF
   </a>
-
-  <p class="small">🔒 Se desbloquea al compartir</p>
 </div>
 
 </div>
 
 <script>
 
-// REF
-const urlParams = new URLSearchParams(window.location.search);
-let ref = urlParams.get("ref") || "none";
+// ================= LANG TEXT =================
+let lang = "es";
 
-// generar ID usuario
+const texts = {
+  es: `Si estás buscando una forma simple de generar ingresos online.
+  Este sistema tiene tres pasos.
+  Usa Airtm para guardar dinero en dólares.
+  Invierte en ETFs con Trading 212.
+  Protege tu dinero con oro.
+  Descarga el PDF gratis compartiendo.`,
+
+  en: `If you want a simple way to make money online.
+  This system has three steps.
+  Use Airtm to store dollars.
+  Invest in ETFs with Trading 212.
+  Protect your money with gold.
+  Download the free PDF by sharing.`,
+
+  it: `Se vuoi guadagnare online facilmente.
+  Questo sistema ha tre passi.
+  Usa Airtm per salvare in dollari.
+  Investi in ETF con Trading 212.
+  Proteggi il denaro con oro.
+  Scarica il PDF gratis condividendo.`
+};
+
+// ================= VOICE =================
+function startVoice(){
+
+  const speech = new SpeechSynthesisUtterance(texts[lang]);
+
+  speech.lang = lang === "es" ? "es-ES" : lang === "it" ? "it-IT" : "en-US";
+  speech.rate = 1;
+
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(speech);
+}
+
+// ================= LANG CHANGE =================
+function changeLang(){
+  lang = document.getElementById("langSelect").value;
+}
+
+// ================= REF =================
 let myRef = localStorage.getItem("myRef");
 if(!myRef){
   myRef = Math.random().toString(36).substring(2,8);
   localStorage.setItem("myRef", myRef);
 }
 
-// generar link limpio
 const baseUrl = window.location.origin + window.location.pathname;
 const myLink = baseUrl + "?ref=" + myRef;
-
 document.getElementById("refLink").innerText = myLink;
 
-// visitas
+// ================= VISITS =================
 let visits = parseInt(localStorage.getItem("visits")||"0");
 visits++;
 localStorage.setItem("visits", visits);
 
-// actualizar UI
+// ================= UPDATE =================
 function update(){
   let shares = parseInt(localStorage.getItem("shares")||"0");
 
   document.getElementById("visitCount").innerText = visits;
   document.getElementById("shareCount").innerText = shares;
 
-  // desbloqueo simple
   if(shares >= 1){
     document.getElementById("pdfBtn").classList.remove("lock");
     document.getElementById("pdfBtn").innerHTML = "📥 Descargar PDF (ACTIVO)";
   }
 }
 
-// SHARE
+// ================= SHARE =================
 function shareSystem(){
 
-  let message = encodeURIComponent(
-    "🚀 Mira este sistema para generar ingresos:\n" + myLink
-  );
+  let message = encodeURIComponent("🚀 " + myLink);
 
-  // abrir WhatsApp
   window.open("https://wa.me/?text=" + message, "_blank");
 
-  // contar share automáticamente
   setTimeout(()=>{
     let s = parseInt(localStorage.getItem("shares")||"0");
     s++;
     localStorage.setItem("shares", s);
 
     document.getElementById("shareStatus").innerHTML =
-      "<span class='ok'>✅ WhatsApp abierto - PDF desbloqueado</span>";
+      "<span class='ok'>✅ Compartido - PDF desbloqueado</span>";
 
     update();
   }, 1200);
 }
 
-// copiar link
+// ================= COPY =================
 function copyRef(){
   navigator.clipboard.writeText(myLink);
   alert("Link copiado");
