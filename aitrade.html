@@ -1,1 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>AI Chart Analyzer</title>
 
+<style>
+body{background:#020617;color:#e2e8f0;font-family:Arial;text-align:center}
+canvas{border:1px solid #1e293b;margin-top:10px}
+button{padding:10px;border-radius:8px;border:none;background:#22c55e;margin:10px}
+</style>
+
+</head>
+<body>
+
+<h2>🤖 AI Chart Analyzer (Imagen)</h2>
+
+<input type="file" id="upload">
+<br>
+<button onclick="analyze()">ANALIZAR</button>
+
+<br>
+<canvas id="c"></canvas>
+
+<script>
+
+let imgData;
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
+
+// ===== CARGAR IMAGEN =====
+document.getElementById("upload").onchange = e=>{
+ let img = new Image();
+ img.onload = ()=>{
+  canvas.width = img.width;
+  canvas.height = img.height;
+  ctx.drawImage(img,0,0);
+  imgData = ctx.getImageData(0,0,canvas.width,canvas.height);
+ }
+ img.src = URL.createObjectURL(e.target.files[0]);
+};
+
+// ===== DETECCION DE BORDES (tipo IA simple) =====
+function detectEdges(data,w,h){
+ let edges = [];
+
+ for(let y=1;y<h-1;y++){
+  for(let x=1;x<w-1;x++){
+
+   let i=(y*w+x)*4;
+
+   let gx = data[i-4] - data[i+4];
+   let gy = data[i-w*4] - data[i+w*4];
+
+   let mag = Math.sqrt(gx*gx+gy*gy);
+
+   if(mag > 50){
+    edges.push({x,y});
+   }
+  }
+ }
+
+ return edges;
+}
+
+// ===== DETECTAR ZONAS (SOPORTE/RESISTENCIA) =====
+function detectZones(edges){
+
+ let zones = {};
+
+ edges.forEach(p=>{
+  let key = Math.round(p.y/10)*10;
+  zones[key] = (zones[key]||0)+1;
+ });
+
+ // ordenar por densidad
+ let sorted = Object.entries(zones)
+ .sort((a,b)=>b[1]-a[1])
+ .slice(0,5);
+
+ return sorted.map(z=>parseInt(z[0]));
+}
+
+// ===== DETECTAR SWINGS =====
+function detectSwings(edges){
+
+ let highs = [];
+ let lows = [];
+
+ edges.forEach(p=>{
+  if(p.y < canvas.height*0.3) highs.push(p);
+  if(p.y > canvas.height*0.7) lows.push(p);
+ });
+
+ return {
+  high: highs[0],
+  low: lows[0]
+ };
+}
+
+// ===== ANALISIS =====
+function analyze(){
+
+ if(!imgData){
+  alert("Sube una imagen primero");
+  return;
+ }
+
+ let edges = detectEdges(imgData.data,canvas.width,canvas.height);
+
+ // dibujar edges (debug IA)
+ ctx.fillStyle="rgba(0,255,255,0.2)";
+ edges.forEach(p=>ctx.fillRect(p.x,p.y,1,1));
+
+ // zonas clave
+ let zones = detectZones(edges);
+
+ ctx.strokeStyle="yellow";
+ zones.forEach(y=>{
+  ctx.beginPath();
+  ctx.moveTo(0,y);
+  ctx.lineTo(canvas.width,y);
+  ctx.stroke();
+ });
+
+ // swings
+ let swings = detectSwings(edges);
+
+ if(swings.high && swings.low){
+
+  ctx.fillStyle="red";
+  ctx.fillRect(swings.high.x,swings.high.y,8,8);
+
+  ctx.fillStyle="green";
+  ctx.fillRect(swings.low.x,swings.low.y,8,8);
+
+  // FIBO
+  let fib50 = swings.low.y + (swings.high.y - swings.low.y)*0.5;
+
+  ctx.strokeStyle="orange";
+  ctx.beginPath();
+  ctx.moveTo(0,fib50);
+  ctx.lineTo(canvas.width,fib50);
+  ctx.stroke();
+
+  // DIRECCION SIMPLE
+  let trend = swings.low.y < swings.high.y ? "BUY" : "SELL";
+
+  // ENTRADA / SL / TP
+  let entryY = fib50;
+  let slY = entryY + 50;
+  let tpY = entryY - 100;
+
+  if(trend==="SELL"){
+    slY = entryY - 50;
+    tpY = entryY + 100;
+  }
+
+  ctx.fillStyle="white";
+  ctx.fillText(trend,20,entryY-10);
+
+  ctx.fillStyle="green";
+  ctx.fillRect(50,entryY,10,10);
+
+  ctx.fillStyle="red";
+  ctx.fillRect(50,slY,10,10);
+
+  ctx.fillStyle="blue";
+  ctx.fillRect(50,tpY,10,10);
+ }
+
+}
+
+</script>
+
+</body>
+</html>
