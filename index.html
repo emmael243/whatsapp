@@ -84,6 +84,19 @@ body{
 .small{font-size:12px;opacity:0.7;text-align:center}
 
 h1{text-align:center}
+
+/* 🌍 LANG BUTTONS */
+.langBox{
+  text-align:center;
+  margin:10px 0;
+}
+.langBox button{
+  margin:5px;
+  padding:8px 14px;
+  border-radius:20px;
+  border:none;
+  cursor:pointer;
+}
 </style>
 </head>
 
@@ -94,6 +107,13 @@ h1{text-align:center}
 <div class="container">
 
 <h1>🚀 Global Wealth Funnel Pro</h1>
+
+<div class="langBox">
+  <button onclick="setLang('es')">Español</button>
+  <button onclick="setLang('en')">English</button>
+  <button onclick="setLang('it')">Italiano</button>
+</div>
+
 <p class="small">Sistema educativo + inversión + conversión</p>
 
 <button class="btn startBtn" onclick="start()">▶ Iniciar guía</button>
@@ -182,144 +202,152 @@ h1{text-align:center}
 
 <script>
 
-// ================= FUNNEL DATA =================
-const steps = [
-{
-  id:"s1",
-  text:"Airtm te permite proteger tu dinero convirtiéndolo en dólares digitales seguros."
-},
-{
-  id:"s2",
-  text:"Trading 212 te da acceso a mercados globales para invertir en crecimiento a largo plazo."
-},
-{
-  id:"s3",
-  text:"BullionVault te permite comprar oro físico como protección contra crisis económicas."
-},
-{
-  id:"s4",
-  text:"Aquí puedes descargar la guía completa con todo el sistema explicado paso a paso."
-}
-];
+// ================= LANG SYSTEM =================
+let lang = localStorage.getItem("lang") || "es";
+
+const steps = {
+es: [
+"Airtm te permite proteger tu dinero convirtiéndolo en dólares digitales seguros.",
+"Trading 212 te da acceso a mercados globales para invertir a largo plazo.",
+"BullionVault te permite comprar oro físico como protección financiera.",
+"Aquí puedes descargar la guía completa del sistema paso a paso."
+],
+en: [
+"Airtm helps you protect your money with digital dollars.",
+"Trading 212 gives you access to global markets.",
+"BullionVault lets you buy real gold as protection.",
+"Here you can download the complete guide."
+],
+it: [
+"Airtm ti protegge convertendo in dollari digitali.",
+"Trading 212 ti permette di investire nei mercati globali.",
+"BullionVault ti consente di comprare oro reale.",
+"Qui puoi scaricare la guida completa."
+]
+};
+
+const voices = {
+es:"es-ES",
+en:"en-US",
+it:"it-IT"
+};
 
 let index = 0;
 
-// ================= TRACKING =================
+// ================= FUNNEL =================
 let funnel = {
-  start: 0,
-  steps: parseInt(localStorage.getItem("steps")||"0"),
-  shares: parseInt(localStorage.getItem("shares")||"0")
+steps: parseInt(localStorage.getItem("steps")||"0"),
+shares: parseInt(localStorage.getItem("shares")||"0")
 };
+
+function setLang(l){
+lang = l;
+localStorage.setItem("lang", lang);
+}
 
 // ================= START =================
 function start(){
-  funnel.start++;
-  index = 0;
-  speakStep();
+index = 0;
+speakStep();
 }
 
 // ================= FLOW =================
 function speakStep(){
 
-  if(index >= steps.length){
-    updateProgress(100);
-    unlockPDF();
-    return;
-  }
+let list = steps[lang];
 
-  clearAll();
+if(index >= list.length){
+updateProgress(100);
+unlockPDF();
+return;
+}
 
-  let step = steps[index];
-  let el = document.getElementById(step.id);
+clearAll();
 
-  el.classList.add("active");
-  el.scrollIntoView({behavior:"smooth", block:"center"});
+let text = list[index];
+let el = document.getElementById("s"+(index+1));
 
-  updateProgress((index/steps.length)*100);
+el.classList.add("active");
+el.scrollIntoView({behavior:"smooth", block:"center"});
 
-  let speech = new SpeechSynthesisUtterance(step.text);
-  speech.lang = "es-ES";
-  speech.rate = 1.05;
+updateProgress((index/list.length)*100);
 
-  el.classList.add("speaking");
+let speech = new SpeechSynthesisUtterance(text);
+speech.lang = voices[lang];
+speech.rate = 1.05;
 
-  speech.onend = () => {
-    el.classList.remove("speaking");
+el.classList.add("speaking");
 
-    funnel.steps++;
-    localStorage.setItem("steps", funnel.steps);
+speech.onend = () => {
+el.classList.remove("speaking");
 
-    index++;
-    setTimeout(speakStep, 900);
-  };
+funnel.steps++;
+localStorage.setItem("steps", funnel.steps);
 
-  window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(speech);
+index++;
+setTimeout(speakStep, 900);
+};
+
+window.speechSynthesis.cancel();
+window.speechSynthesis.speak(speech);
 }
 
 // ================= RESET =================
 function clearAll(){
-  document.querySelectorAll(".card").forEach(c=>{
-    c.classList.remove("active","speaking");
-  });
+document.querySelectorAll(".card").forEach(c=>{
+c.classList.remove("active","speaking");
+});
 }
 
 // ================= PROGRESS =================
 function updateProgress(p){
-  document.getElementById("progress").style.width = p + "%";
+document.getElementById("progress").style.width = p + "%";
 }
 
 // ================= REF =================
 let myRef = localStorage.getItem("myRef");
-
 if(!myRef){
-  myRef = Math.random().toString(36).substring(2,8);
-  localStorage.setItem("myRef", myRef);
+myRef = Math.random().toString(36).substring(2,8);
+localStorage.setItem("myRef", myRef);
 }
 
-const link = window.location.origin + window.location.pathname + "?ref=" + myRef;
+const link = window.location.href + "?ref=" + myRef;
 document.getElementById("refLink").innerText = link;
 
 // ================= SHARE =================
 function shareNow(){
 
-  let msg = encodeURIComponent("🚀 Sistema financiero:\n" + link);
+let msg = encodeURIComponent("🚀 "+link);
 
-  window.open("https://wa.me/?text=" + msg, "_blank");
+window.open("https://wa.me/?text="+msg, "_blank");
 
-  setTimeout(()=>{
-    funnel.shares++;
-    localStorage.setItem("shares", funnel.shares);
-
-    document.getElementById("shareStatus").innerHTML =
-      "✅ Acción registrada";
-
-    unlockPDF();
-  },1200);
+setTimeout(()=>{
+funnel.shares++;
+localStorage.setItem("shares", funnel.shares);
+document.getElementById("shareStatus").innerHTML="✅ OK";
+unlockPDF();
+},1200);
 }
 
 // ================= UNLOCK =================
 function unlockPDF(){
 
-  if(funnel.shares >= 1 && funnel.steps >= 3){
-
-    document.getElementById("pdfBtn").classList.remove("lock");
-    document.getElementById("pdfBtn").innerHTML =
-      "📥 Descargar PDF (DESBLOQUEADO)";
-  }
+if(funnel.shares>=1 && funnel.steps>=3){
+document.getElementById("pdfBtn").classList.remove("lock");
+document.getElementById("pdfBtn").innerHTML="📥 Descargar PDF";
+}
 }
 
 // ================= COPY =================
 function copyLink(){
-  navigator.clipboard.writeText(link);
-  alert("Link copiado");
+navigator.clipboard.writeText(link);
+alert("Link copiado");
 }
 
-// ================= AUTO =================
-window.onload = () => {
-  if(parseInt(localStorage.getItem("shares")||"0") > 0){
-    unlockPDF();
-  }
+window.onload = ()=>{
+if(localStorage.getItem("shares")>0){
+unlockPDF();
+}
 };
 
 </script>
